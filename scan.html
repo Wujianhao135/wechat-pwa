@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <meta name="theme-color" content="#ededed">
+    <meta name="theme-color" content="#000000">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="扫一扫">
     <title>扫一扫</title>
     <link rel="manifest" href="manifest.webmanifest">
@@ -14,50 +14,59 @@
     <script src="js/lucide.min.js"></script>
     <script src="js/jsQR.min.js"></script>
     <style>
-        :root { --bg:#f5f5f5; --surface:#fff; --text:#191919; --muted:#8c8c8c; --line:#e8e8e8; --green:#07c160; --topbar-height:calc(56px + env(safe-area-inset-top)); }
+        :root { --green:#07c160; --white:#fff; --mode-height:calc(96px + env(safe-area-inset-bottom)); }
         * { box-sizing:border-box; }
-        body { margin:0; min-height:100dvh; background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",sans-serif; }
+        html,body { width:100%; height:100%; overflow:hidden; }
+        body { margin:0; min-height:100dvh; background:#000; color:var(--white); font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Microsoft YaHei",sans-serif; -webkit-font-smoothing:antialiased; }
         button { border:0; font:inherit; cursor:pointer; }
-        .scan-app { min-height:100dvh; max-width:520px; margin:0 auto; display:flex; flex-direction:column; background:var(--bg); }
-        .topbar { height:var(--topbar-height); padding:env(safe-area-inset-top) 14px 0; display:flex; align-items:center; justify-content:center; position:relative; background:var(--surface); border-bottom:1px solid var(--line); }
-        .topbar h1 { margin:0; font-size:18px; font-weight:600; line-height:56px; }
-        .back-button { width:38px; height:38px; position:absolute; left:10px; bottom:9px; display:grid; place-items:center; background:transparent; color:var(--text); border-radius:4px; }
-        .back-button:active { background:#eee; }
-        .back-button svg { width:23px; height:23px; }
-        .scan-main { flex:1; padding:44px 24px 28px; display:flex; flex-direction:column; align-items:center; }
-        .hint { margin:0 0 28px; color:var(--muted); font-size:14px; }
-        .viewfinder { width:min(78vw,320px); aspect-ratio:1; position:relative; overflow:hidden; background:#a9a9a9; box-shadow:0 0 0 1px rgba(0,0,0,.08); cursor:pointer; }
-        .viewfinder.camera-on { background:#111; cursor:default; }
-        .viewfinder:focus-visible { outline:3px solid rgba(7,193,96,.4); outline-offset:4px; }
-        .camera-video { width:100%; height:100%; display:none; object-fit:cover; }
-        .camera-on .camera-video { display:block; }
-        .camera-on .camera-mark,.camera-on .simulated { display:none; }
-        .viewfinder::before,.viewfinder::after { content:""; position:absolute; pointer-events:none; }
-        .viewfinder::before { inset:20px; background:linear-gradient(var(--green),var(--green)) left top/34px 4px no-repeat,linear-gradient(var(--green),var(--green)) left top/4px 34px no-repeat,linear-gradient(var(--green),var(--green)) right top/34px 4px no-repeat,linear-gradient(var(--green),var(--green)) right top/4px 34px no-repeat,linear-gradient(var(--green),var(--green)) left bottom/34px 4px no-repeat,linear-gradient(var(--green),var(--green)) left bottom/4px 34px no-repeat,linear-gradient(var(--green),var(--green)) right bottom/34px 4px no-repeat,linear-gradient(var(--green),var(--green)) right bottom/4px 34px no-repeat; }
-        .viewfinder::after { height:2px; top:20px; right:20px; left:20px; background:var(--green); box-shadow:0 0 8px rgba(7,193,96,.9); animation:scan-line 2.6s ease-in-out infinite; }
-        .camera-mark { position:absolute; inset:0; display:grid; place-items:center; color:rgba(255,255,255,.72); pointer-events:none; }
-        .camera-mark svg { width:48px; height:48px; stroke-width:1.2; }
-        .simulated { margin:20px 0 0; color:rgba(255,255,255,.88); font-size:13px; pointer-events:none; }
-        .bottom-actions { width:100%; margin-top:auto; display:grid; grid-template-columns:1fr 1fr; gap:14px; }
-        .action-button { height:52px; display:flex; align-items:center; justify-content:center; gap:9px; background:var(--surface); color:var(--text); border:1px solid var(--line); border-radius:4px; font-size:15px; }
-        .action-button:active { background:#eee; }
-        .action-button.primary { background:var(--green); border-color:var(--green); color:#fff; }
-        .action-button svg { width:20px; height:20px; }
-        .toast { position:fixed; left:50%; bottom:96px; transform:translate(-50%,12px); padding:10px 15px; opacity:0; pointer-events:none; background:rgba(0,0,0,.72); color:#fff; border-radius:4px; font-size:13px; transition:opacity .2s,transform .2s; }
+        .scan-app { width:100%; max-width:520px; min-height:100dvh; margin:0 auto; position:relative; overflow:hidden; background:#77736f; isolation:isolate; }
+        .viewfinder { position:absolute; inset:0; z-index:0; overflow:hidden; background:#77736f; cursor:pointer; }
+        .viewfinder:focus-visible { outline:2px solid var(--green); outline-offset:-2px; }
+        .camera-video { width:100%; height:100%; display:block; opacity:0; object-fit:cover; transition:opacity .2s; }
+        .camera-on .camera-video { opacity:1; }
+        .camera-shade { position:absolute; inset:0; background:rgba(0,0,0,.24); pointer-events:none; }
+        .scan-beam { width:calc(100% - 44px); max-width:460px; height:2px; position:absolute; top:43%; left:50%; background:#18e67a; box-shadow:0 0 7px 2px rgba(24,230,122,.72),0 0 24px 8px rgba(24,230,122,.22); transform:translateX(-50%); animation:scan-line 2.8s ease-in-out infinite; pointer-events:none; }
+        .top-controls { height:calc(86px + env(safe-area-inset-top)); padding:calc(18px + env(safe-area-inset-top)) 22px 0; position:absolute; top:0; right:0; left:0; z-index:4; display:flex; align-items:flex-start; justify-content:space-between; pointer-events:none; }
+        .top-button { width:44px; height:44px; display:grid; place-items:center; pointer-events:auto; color:#76716e; background:rgba(255,255,255,.95); border-radius:50%; }
+        .top-button:active { opacity:.72; }
+        .top-button svg { width:26px; height:26px; stroke-width:2.3; }
+        .more-button { background:transparent; color:#fff; }
+        .more-button svg { width:31px; height:31px; stroke-width:2.8; }
+        .privacy-dot { width:8px; height:8px; position:absolute; top:calc(10px + env(safe-area-inset-top)); right:26px; border-radius:50%; background:#1fdf73; box-shadow:0 0 4px rgba(31,223,115,.7); }
+        .scan-main { position:absolute; inset:0 0 var(--mode-height); z-index:3; pointer-events:none; }
+        .hint { width:100%; margin:0; padding:0 22px; position:absolute; bottom:196px; color:rgba(255,255,255,.88); font-size:17px; font-weight:400; line-height:24px; text-align:center; letter-spacing:0; }
+        .bottom-actions { position:absolute; right:22px; bottom:28px; left:22px; display:flex; align-items:center; justify-content:space-between; }
+        .action-button { pointer-events:auto; color:#fff; background:rgba(45,43,41,.62); -webkit-backdrop-filter:blur(12px); backdrop-filter:blur(12px); }
+        .action-button:active { background:rgba(45,43,41,.78); }
+        .qr-button { min-width:250px; height:76px; padding:0 21px; display:flex; align-items:center; gap:14px; border-radius:38px; text-align:left; }
+        .qr-button svg { width:30px; height:30px; flex:0 0 30px; stroke-width:2.2; }
+        .qr-copy { min-width:0; display:flex; flex-direction:column; gap:3px; }
+        .qr-title { display:flex; align-items:center; gap:8px; font-size:18px; font-weight:600; line-height:24px; white-space:nowrap; }
+        .new-badge { padding:1px 8px 2px; border-radius:13px; background:#fa5151; font-size:12px; font-weight:500; line-height:21px; }
+        .qr-subtitle { color:rgba(255,255,255,.62); font-size:13px; line-height:18px; white-space:nowrap; }
+        .album-button { width:62px; height:62px; display:grid; place-items:center; border-radius:50%; }
+        .album-button svg { width:27px; height:27px; stroke-width:1.9; }
+        .mode-bar { height:var(--mode-height); padding-bottom:env(safe-area-inset-bottom); position:absolute; right:0; bottom:0; left:0; z-index:5; display:flex; align-items:center; justify-content:center; gap:48px; background:#050505; }
+        .mode-button { width:104px; height:76px; position:relative; background:transparent; color:#747474; font-size:22px; line-height:28px; }
+        .mode-button.active { color:#fff; }
+        .mode-button.active::after { content:""; width:7px; height:7px; position:absolute; left:50%; bottom:5px; border-radius:50%; background:#fff; transform:translateX(-50%); }
+        .toast { max-width:calc(100% - 40px); position:fixed; left:50%; bottom:calc(var(--mode-height) + 112px); z-index:8; transform:translate(-50%,12px); padding:10px 15px; opacity:0; pointer-events:none; background:rgba(0,0,0,.72); color:#fff; border-radius:4px; font-size:13px; text-align:center; transition:opacity .2s,transform .2s; }
         .toast.show { opacity:1; transform:translate(-50%,0); }
-        @keyframes scan-line { 0%,10% { top:20px; opacity:.5; } 50% { opacity:1; } 90%,100% { top:calc(100% - 22px); opacity:.5; } }
-        @media (min-width:521px) { body { padding:20px 0; } .scan-app { min-height:calc(100dvh - 40px); height:calc(100dvh - 40px); border-radius:8px; overflow:hidden; box-shadow:0 10px 30px rgba(0,0,0,.16); } }
+        @keyframes scan-line { 0%,100% { top:39%; opacity:.55; } 50% { top:57%; opacity:1; } }
+        @media (max-width:380px) { .bottom-actions { right:16px; left:16px; }.qr-button { min-width:226px; padding:0 17px; gap:11px; }.qr-title { font-size:17px; }.qr-subtitle { font-size:12px; }.album-button { width:58px; height:58px; } }
+        @media (min-width:521px) { body { padding:20px 0; }.scan-app { min-height:calc(100dvh - 40px); height:calc(100dvh - 40px); border-radius:8px; box-shadow:0 10px 30px rgba(0,0,0,.24); } }
     </style>
 </head>
 <body>
 <div class="scan-app">
-    <header class="topbar"><button class="back-button" id="backButton" aria-label="返回"><i data-lucide="arrow-left"></i></button><h1>扫一扫</h1></header>
+    <div class="viewfinder" id="viewfinder" role="button" tabindex="0" aria-label="轻触开启摄像头"><video class="camera-video" id="cameraVideo" autoplay playsinline muted></video><div class="camera-shade"></div><span class="scan-beam" aria-hidden="true"></span></div>
+    <header class="top-controls"><button class="top-button" id="backButton" aria-label="关闭扫一扫"><i data-lucide="x"></i></button><button class="top-button more-button" id="moreButton" aria-label="更多"><i data-lucide="ellipsis"></i></button><span class="privacy-dot" aria-hidden="true"></span></header>
     <main class="scan-main">
-        <p class="hint" id="hint">点击取景框，开启摄像头扫描二维码</p>
-        <div class="viewfinder" id="viewfinder" role="button" tabindex="0" aria-label="点击开启摄像头"><video class="camera-video" id="cameraVideo" autoplay playsinline muted></video><div class="camera-mark"><i data-lucide="camera"></i></div><span class="simulated">点击开启摄像头</span></div>
-        <canvas id="scanCanvas" hidden></canvas>
-        <div class="bottom-actions"><button class="action-button primary" id="myQrButton"><i data-lucide="qr-code"></i><span>我的二维码</span></button><button class="action-button" id="albumButton"><i data-lucide="image"></i><span>相册</span></button></div>
+        <p class="hint" id="hint">识别二维码 / 花草 / 动物 / 商品等</p>
+        <div class="bottom-actions"><button class="action-button qr-button" id="myQrButton"><i data-lucide="qr-code"></i><span class="qr-copy"><span class="qr-title">我的二维码 <span class="new-badge">NEW</span></span><span class="qr-subtitle">添加朋友、收照片、收红包</span></span></button><button class="action-button album-button" id="albumButton" aria-label="相册"><i data-lucide="image"></i></button></div>
     </main>
+    <nav class="mode-bar" aria-label="扫一扫模式"><button class="mode-button active" type="button">扫一扫</button><button class="mode-button" id="translateButton" type="button">翻译</button></nav>
+    <canvas id="scanCanvas" hidden></canvas>
 </div>
 <div class="toast" id="toast" role="status"></div>
 <script>
@@ -141,8 +150,11 @@
             }
         });
         document.getElementById('backButton').addEventListener('click', function () { if (history.length > 1) history.back(); else window.location.href = 'index.html'; });
+        document.getElementById('moreButton').addEventListener('click', function () { showToast('更多功能即将上线'); });
         document.getElementById('myQrButton').addEventListener('click', function () { showToast('我的二维码功能即将上线'); });
         document.getElementById('albumButton').addEventListener('click', function () { showToast('相册功能即将上线'); });
+        document.getElementById('translateButton').addEventListener('click', function () { showToast('翻译功能即将上线'); });
+        window.addEventListener('load', function () { if (!params.has('preview') && window.location.protocol !== 'file:') startCamera(); });
         window.addEventListener('pagehide', stopCamera);
     }());
 </script>

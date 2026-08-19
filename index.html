@@ -55,6 +55,8 @@
         .tab svg { width:31px; height:31px; stroke-width:2.2; }.tab.active { color:var(--green); }.tab:not(.active) { color:#111; }
         .tab-icon { height:31px; position:relative; }.tab-badge { min-width:42px; height:31px; padding:0 10px; position:absolute; top:-5px; right:-28px; display:grid; place-items:center; border:2px solid var(--white); border-radius:18px; background:var(--red); color:#fff; font-size:20px; line-height:24px; }
         .tab-badge.dot { width:17px; min-width:17px; height:17px; padding:0; top:-6px; right:-8px; border-width:1px; }
+        .tab-art { width:auto; height:47px; max-width:74px; display:block; object-fit:contain; }
+        .sr-only { width:1px; height:1px; padding:0; position:absolute; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
         @media (max-width:520px) {
             .chat-item { min-height:70px; padding:10px 12px 10px 16px; gap:12px; overflow:hidden; }
             .avatar-wrap { width:50px; height:50px; flex-basis:50px; transform:none; margin-right:0; }
@@ -75,10 +77,8 @@
             .fold-icon svg { width:50px; height:50px; }
             .fold-text { font-size:16px; }
             .fold-arrow svg { width:22px; height:22px; }
-            .tab { font-size:12px; }
-            .tab svg { width:25px; height:25px; }
-            .tab-icon { height:25px; }
-            .tab-badge { min-width:34px; height:25px; font-size:16px; }
+            .tab { padding:0; font-size:12px; }
+            .tab-art { height:47px; max-width:72px; }
             .title { font-size:22px; }
         }
         @media (min-width:521px) { body { padding:20px 0; } #app { height:calc(100dvh - 40px); min-height:calc(100dvh - 40px); border-radius:8px; box-shadow:0 10px 30px rgba(0,0,0,.16); }.chat-list { height:calc(100% - var(--top) - var(--bottom)); } }
@@ -99,7 +99,7 @@
         <button class="chat-item" data-name="万名学子宜昌体验行"><span class="avatar-wrap"><span class="avatar"><img src="img/mmexport1787144417901.jpg" alt="万名学子宜昌体验行头像"></span></span><span class="chat-main"><span class="chat-name">万名学子宜昌体验行-纺...</span></span><span class="chat-side"><span class="chat-time">6月16日</span></span></button>
         <button class="fold-row" id="foldButton"><span class="fold-icon"><i data-lucide="list"></i></span><span class="fold-text">折叠置顶聊天</span><span class="fold-arrow"><i data-lucide="chevron-up"></i></span></button>
     </main>
-    <nav class="tabbar" aria-label="主导航"><button class="tab active" data-tab="微信"><span class="tab-icon"><i data-lucide="messages-square"></i><span class="tab-badge">...</span></span><span>微信</span></button><button class="tab" data-tab="通讯录"><span class="tab-icon"><i data-lucide="contact"></i></span><span>通讯录</span></button><button class="tab" data-tab="发现"><span class="tab-icon"><i data-lucide="compass"></i><span class="tab-badge dot"></span></span><span>发现</span></button><button class="tab" data-tab="我"><span class="tab-icon"><i data-lucide="user-round"></i></span><span>我</span></button></nav>
+    <nav class="tabbar" aria-label="主导航"><button class="tab active" data-tab="微信"><img class="tab-art" src="img/bottom/t1.png" alt=""><span class="sr-only">微信</span></button><button class="tab" data-tab="通讯录"><img class="tab-art" src="img/bottom/t2.png" alt=""><span class="sr-only">通讯录</span></button><button class="tab" data-tab="发现"><img class="tab-art" src="img/bottom/t3.png" alt=""><span class="sr-only">发现</span></button><button class="tab" data-tab="我"><img class="tab-art" src="img/bottom/t4.png" alt=""><span class="sr-only">我</span></button></nav>
 </div>
 <script>
     (function () {
