@@ -134,7 +134,7 @@
         lucide.createIcons();
         document.getElementById('pageTitle').textContent = '微信(' + unreadTotal + ')';
         document.getElementById('searchButton').addEventListener('click', function () { window.location.href = 'search.html'; });
-        document.getElementById('scanButton').addEventListener('click', function () { window.location.href = 'scan.html?v=19'; });
+        document.getElementById('scanButton').addEventListener('click', function () { window.location.href = 'scan.html?v=21'; });
         chatItems.forEach(function (item) { item.addEventListener('click', function () { window.alert('进入聊天：' + item.getAttribute('data-name')); }); });
         document.getElementById('foldButton').addEventListener('click', function () { window.alert('置顶聊天已折叠'); });
         var meSheet = document.getElementById('meSheet');
@@ -167,7 +167,7 @@
                     refreshing = true;
                     window.location.reload();
                 });
-            navigator.serviceWorker.register('service-worker.js?v=19', { updateViaCache: 'none' }).then(function (registration) {
+                navigator.serviceWorker.register('service-worker.js?v=21', { updateViaCache: 'none' }).then(function (registration) {
                     registration.update();
                 });
             });
