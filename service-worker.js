@@ -1,4 +1,4 @@
-const CACHE_NAME = 'wechat-pwa-v5';
+const CACHE_NAME = 'wechat-pwa-v9';
 const APP_FILES = [
     './',
     './index.html',
@@ -8,6 +8,14 @@ const APP_FILES = [
     './manifest.webmanifest',
     './js/lucide.min.js',
     './js/jsQR.min.js',
+    './img/mmexport1787144425409.jpg',
+    './img/mmexport1787144417901.jpg',
+    './img/mmexport1787144411359.jpg',
+    './img/mmexport1787144405785.jpg',
+    './img/mmexport1787144397379.jpg',
+    './img/mmexport1787144389657.jpg',
+    './img/mmexport1787144381595.jpg',
+    './img/mmexport1787144375708.jpg',
     './icons/app-icon.svg',
     './icons/app-icon-180.png',
     './icons/app-icon-192.png',
