@@ -93,6 +93,7 @@
         var ocrFailureCount = 0;
         var scanSettings = null;
         var customTransferTimer;
+        var redirectPending = false;
         var OCR_SPEEDS = {
             fast: { interval: 800, confirmations: 1 },
             balanced: { interval: 1600, confirmations: 2 },
@@ -126,7 +127,10 @@
         function scheduleTransferPage(scannedValue) {
             var scannedName = cleanOcrName(scannedValue);
             if (!isPlausibleName(scannedName)) return;
-            stopCamera();
+            if (redirectPending) return;
+            redirectPending = true;
+            scanning = false;
+            clearTimeout(ocrTimer);
             clearTimeout(customTransferTimer);
             customTransferTimer = setTimeout(function () {
                 customTransferTimer = null;
@@ -314,14 +318,14 @@
             }
         }
 
-        viewfinder.addEventListener('click', function () { if (!scanning) startCamera(); });
+        viewfinder.addEventListener('click', function () { if (!scanning && !redirectPending) startCamera(); });
         viewfinder.addEventListener('keydown', function (event) {
             if (event.key === 'Enter' || event.key === ' ') {
                 event.preventDefault();
-                if (!scanning) startCamera();
+                if (!scanning && !redirectPending) startCamera();
             }
         });
-        document.getElementById('backButton').addEventListener('click', function () { clearTimeout(customTransferTimer); if (history.length > 1) history.back(); else window.location.href = 'index.html'; });
+        document.getElementById('backButton').addEventListener('click', function () { clearTimeout(customTransferTimer); redirectPending = false; stopCamera(); if (history.length > 1) history.back(); else window.location.href = 'index.html'; });
         document.getElementById('settingsButton').addEventListener('click', function () { window.location.href = 'settings.html'; });
         document.getElementById('myQrButton').addEventListener('click', function () { showToast('我的二维码功能即将上线'); });
         document.getElementById('albumButton').addEventListener('click', function () { showToast('相册功能即将上线'); });

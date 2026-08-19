@@ -3,119 +3,164 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <meta name="theme-color" content="#ededed">
+    <meta name="theme-color" content="#efefef">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <meta name="apple-mobile-web-app-title" content="转账">
-    <title>转账</title>
+    <meta name="apple-mobile-web-app-title" content="付款">
+    <title>付款</title>
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="icon" href="icons/app-icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="icons/app-icon-180.png">
     <script src="js/lucide.min.js"></script>
     <style>
-        :root { --bg:#ededed; --surface:#fff; --text:#191919; --muted:#8a8a8a; --line:#e8e8e8; --green:#07c160; --topbar-height:calc(56px + env(safe-area-inset-top)); }
+        :root { --page:#efefef; --sheet:#fff; --keypad:#f4f4f4; --key:#fff; --text:#171717; --green:#07c160; --green-soft:#a8e6c7; --topbar:calc(62px + env(safe-area-inset-top)); --keypad-height:calc(306px + env(safe-area-inset-bottom)); }
         * { box-sizing:border-box; }
-        body { margin:0; min-height:100dvh; background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",sans-serif; }
+        html,body { width:100%; height:100%; overflow:hidden; }
+        body { margin:0; background:var(--page); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Microsoft YaHei",sans-serif; -webkit-font-smoothing:antialiased; }
         button,input { font:inherit; }
         button { border:0; cursor:pointer; }
-        .transfer-app { min-height:100dvh; max-width:520px; margin:0 auto; display:flex; flex-direction:column; background:var(--bg); }
-        .topbar { height:var(--topbar-height); padding:env(safe-area-inset-top) 14px 0; display:flex; align-items:center; justify-content:center; position:relative; background:var(--surface); border-bottom:1px solid var(--line); }
-        .topbar h1 { margin:0; font-size:18px; font-weight:600; line-height:56px; }
-        .back-button { width:38px; height:38px; position:absolute; left:10px; bottom:9px; display:grid; place-items:center; background:transparent; color:var(--text); border-radius:4px; }
-        .back-button:active { background:#eee; }
-        .back-button svg { width:23px; height:23px; }
-        .content { flex:1; padding:24px 16px max(24px,env(safe-area-inset-bottom)); display:flex; flex-direction:column; }
-        .recipient { padding:22px 16px 24px; display:flex; flex-direction:column; align-items:center; background:var(--surface); border-bottom:1px solid var(--line); }
-        .avatar { width:64px; height:64px; display:grid; place-items:center; overflow:hidden; background:#5689ca; color:#fff; border-radius:6px; font-size:28px; font-weight:500; }
-        .avatar img { width:100%; height:100%; display:block; object-fit:cover; }
-        .nickname { margin:12px 0 0; font-size:17px; font-weight:500; }
-        .amount-panel { padding:24px 20px 20px; background:var(--surface); }
-        .amount-label { margin:0 0 14px; font-size:14px; }
-        .amount-row { min-height:64px; display:flex; align-items:center; border-bottom:1px solid var(--line); }
-        .currency { margin-right:8px; font-size:34px; line-height:1; font-weight:500; }
-        .amount-input { width:100%; min-width:0; border:0; outline:0; background:transparent; color:var(--text); font-size:42px; font-weight:500; line-height:1.2; }
-        .amount-input::placeholder { color:#d2d2d2; }
-        .transfer-note { margin:14px 0 0; color:var(--muted); font-size:13px; line-height:1.55; }
-        .confirm-button { width:100%; height:48px; margin-top:22px; display:none; align-items:center; justify-content:center; background:var(--green); color:#fff; border-radius:4px; font-size:16px; font-weight:500; }
-        .confirm-button.show { display:flex; }
-        .confirm-button:active { background:#06ad56; }
-        .footer-note { margin:auto 0 0; padding-top:28px; color:#a0a0a0; text-align:center; font-size:12px; line-height:1.6; }
-        .toast { position:fixed; left:50%; bottom:90px; transform:translate(-50%,12px); max-width:calc(100% - 40px); padding:10px 15px; opacity:0; pointer-events:none; background:rgba(0,0,0,.72); color:#fff; border-radius:4px; font-size:13px; white-space:nowrap; transition:opacity .2s,transform .2s; }
-        .toast.show { opacity:1; transform:translate(-50%,0); }
-        @media (min-width:521px) { body { padding:20px 0; } .transfer-app { min-height:calc(100dvh - 40px); height:calc(100dvh - 40px); border-radius:8px; overflow:hidden; box-shadow:0 10px 30px rgba(0,0,0,.16); } }
+        .transfer-app { width:100%; max-width:520px; height:100dvh; min-height:100dvh; margin:0 auto; display:flex; flex-direction:column; overflow:hidden; background:var(--page); }
+        .topbar { height:var(--topbar); padding:env(safe-area-inset-top) 14px 0; position:relative; display:flex; flex:0 0 var(--topbar); align-items:center; justify-content:center; background:var(--page); }
+        .topbar h1 { margin:0; font-size:25px; font-weight:600; line-height:62px; }
+        .back-button { width:46px; height:46px; position:absolute; bottom:6px; left:8px; display:grid; place-items:center; background:transparent; color:var(--text); border-radius:50%; }
+        .back-button:active { background:#e2e2e2; }
+        .back-button svg { width:32px; height:32px; stroke-width:1.8; }
+        .payment-intro { height:218px; padding:34px 28px 0; position:relative; flex:0 0 218px; background:var(--page); }
+        .payment-kind { margin:0; font-size:28px; font-weight:600; line-height:38px; }
+        .recipient-name { max-width:calc(100% - 94px); margin:8px 0 0; overflow:hidden; color:#858585; font-size:25px; line-height:36px; white-space:nowrap; text-overflow:ellipsis; }
+        .recipient-avatar { width:72px; height:72px; position:absolute; top:34px; right:28px; overflow:hidden; background:#f5f5f5; border-radius:2px; }
+        .recipient-avatar img { width:100%; height:100%; display:block; object-fit:cover; }
+        .amount-sheet { min-height:0; flex:1; padding:38px 28px 25px; position:relative; z-index:1; display:flex; flex-direction:column; background:var(--sheet); border-radius:28px 28px 0 0; }
+        .amount-label { margin:0 0 22px; font-size:25px; line-height:34px; }
+        .amount-editor { min-height:91px; display:flex; align-items:center; border-bottom:1px solid #e4e4e4; cursor:text; }
+        .currency { flex:0 0 auto; margin-right:14px; font-size:78px; font-weight:700; line-height:1; }
+        .amount-input { width:100%; min-width:0; height:91px; padding:0; border:0; outline:0; color:var(--text); background:transparent; font-size:68px; font-weight:600; line-height:1; caret-color:#28b978; }
+        .amount-input::selection { background:rgba(7,193,96,.16); }
+        .amount-input:focus { outline:0; }
+        .amount-note { margin:28px 0 0; color:#607696; font-size:22px; line-height:30px; }
+        .keypad { height:var(--keypad-height); padding:10px 10px calc(10px + env(safe-area-inset-bottom)); flex:0 0 var(--keypad-height); display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); grid-template-rows:repeat(4,minmax(0,1fr)); gap:10px; background:var(--keypad); border-top:1px solid #dedede; }
+        .key { min-width:0; min-height:0; display:grid; place-items:center; color:#111; background:var(--key); border-radius:7px; font-size:39px; font-weight:500; line-height:1; box-shadow:0 1px 0 rgba(0,0,0,.02); -webkit-tap-highlight-color:transparent; }
+        .key:active { background:#e8e8e8; }
+        .key-delete { font-size:0; }
+        .key-delete svg { width:32px; height:32px; stroke-width:2.1; }
+        .key-zero { grid-column:1 / 3; grid-row:4; }
+        .key-decimal { grid-column:3; grid-row:4; font-size:35px; }
+        .key-one { grid-column:1; grid-row:1; }.key-two { grid-column:2; grid-row:1; }.key-three { grid-column:3; grid-row:1; }.key-delete { grid-column:4; grid-row:1; }
+        .key-four { grid-column:1; grid-row:2; }.key-five { grid-column:2; grid-row:2; }.key-six { grid-column:3; grid-row:2; }
+        .key-seven { grid-column:1; grid-row:3; }.key-eight { grid-column:2; grid-row:3; }.key-nine { grid-column:3; grid-row:3; }
+        .pay-button { grid-column:4; grid-row:2 / 5; display:grid; place-items:center; padding:0 6px; color:rgba(255,255,255,.72); background:var(--green-soft); border-radius:8px; font-size:29px; font-weight:600; }
+        .pay-button.enabled { color:#fff; background:var(--green); }
+        .pay-button:active { background:#06ad56; }
+        .pay-button:disabled { cursor:default; }
+        @media (max-width:380px) { :root { --keypad-height:calc(294px + env(safe-area-inset-bottom)); }.payment-intro { height:202px; flex-basis:202px; padding-top:27px; }.payment-kind { font-size:25px; }.recipient-name { font-size:22px; }.recipient-avatar { top:27px; right:22px; width:64px; height:64px; }.amount-sheet { padding:28px 22px 20px; }.amount-label { margin-bottom:15px; font-size:23px; }.currency { font-size:68px; }.amount-input { height:80px; font-size:60px; }.amount-editor { min-height:80px; }.amount-note { margin-top:20px; font-size:19px; }.key { font-size:35px; } }
+        @media (min-width:521px) { body { padding:20px 0; }.transfer-app { height:calc(100dvh - 40px); min-height:calc(100dvh - 40px); border-radius:8px; box-shadow:0 10px 30px rgba(0,0,0,.16); } }
     </style>
 </head>
 <body>
 <div class="transfer-app">
     <header class="topbar">
-        <button class="back-button" id="backButton" aria-label="返回"><i data-lucide="arrow-left"></i></button>
-        <h1 id="pageTitle">转账给 XXX</h1>
+        <button class="back-button" id="backButton" type="button" aria-label="返回"><i data-lucide="arrow-left"></i></button>
+        <h1>付款</h1>
     </header>
-    <main class="content">
-        <section class="recipient" aria-label="收款人信息">
-            <div class="avatar" id="recipientAvatar"><img id="recipientAvatarImage" src="img/default-transfer-avatar.png" alt="收款人头像"></div>
-            <p class="nickname" id="recipientName">XXX</p>
-        </section>
-        <section class="amount-panel">
-            <p class="amount-label">转账金额</p>
-            <label class="amount-row">
-                <span class="currency">¥</span>
-                <input class="amount-input" id="amountInput" type="text" inputmode="decimal" autocomplete="off" placeholder="0.00" aria-label="转账金额">
-            </label>
-            <p class="transfer-note">转账说明：请确认收款人和转账金额。本页面仅用于界面演示，不会产生真实交易。</p>
-            <button class="confirm-button" id="confirmButton">确认转账</button>
-        </section>
-        <p class="footer-note">转账说明<br>转账前请仔细核对对方身份，谨防诈骗</p>
-    </main>
+    <section class="payment-intro" aria-label="收款人信息">
+        <p class="payment-kind">付款给个人</p>
+        <p class="recipient-name" id="recipientName">XXX</p>
+        <div class="recipient-avatar"><img id="recipientAvatarImage" src="img/default-transfer-avatar.png" alt="收款人头像"></div>
+    </section>
+    <section class="amount-sheet">
+        <p class="amount-label">金额</p>
+        <label class="amount-editor" id="amountEditor" for="amountInput">
+            <span class="currency">¥</span>
+            <input class="amount-input" id="amountInput" type="text" readonly inputmode="none" autocomplete="off" aria-label="付款金额">
+        </label>
+        <p class="amount-note">添加备注</p>
+    </section>
+    <section class="keypad" aria-label="数字键盘">
+        <button class="key key-one" type="button" data-key="1">1</button>
+        <button class="key key-two" type="button" data-key="2">2</button>
+        <button class="key key-three" type="button" data-key="3">3</button>
+        <button class="key key-delete" type="button" data-action="delete" aria-label="删除"><i data-lucide="delete"></i></button>
+        <button class="key key-four" type="button" data-key="4">4</button>
+        <button class="key key-five" type="button" data-key="5">5</button>
+        <button class="key key-six" type="button" data-key="6">6</button>
+        <button class="key key-seven" type="button" data-key="7">7</button>
+        <button class="key key-eight" type="button" data-key="8">8</button>
+        <button class="key key-nine" type="button" data-key="9">9</button>
+        <button class="key key-zero" type="button" data-key="0">0</button>
+        <button class="key key-decimal" type="button" data-key=".">.</button>
+        <button class="pay-button" id="confirmButton" type="button" disabled>付款</button>
+    </section>
 </div>
-<div class="toast" id="toast" role="status"></div>
 <script>
     (function () {
         lucide.createIcons();
         var amountInput = document.getElementById('amountInput');
+        var amountEditor = document.getElementById('amountEditor');
         var confirmButton = document.getElementById('confirmButton');
-        var toast = document.getElementById('toast');
-        var timer;
         var params = new URLSearchParams(window.location.search);
         var recipient = (params.get('name') || 'XXX').slice(0, 20);
-        var avatarImage = document.getElementById('recipientAvatarImage');
         var defaultAvatar = localStorage.getItem('scan_default_avatar') || 'img/default-transfer-avatar.png';
+        var amount = '';
 
-        document.title = '转账给 ' + recipient;
-        document.getElementById('pageTitle').textContent = '转账给 ' + recipient;
+        document.title = '付款';
         document.getElementById('recipientName').textContent = recipient;
-        avatarImage.src = defaultAvatar;
-
-        function updateConfirmButton() {
-            var amount = Number(amountInput.value);
-            confirmButton.classList.toggle('show', Number.isFinite(amount) && amount > 0);
-        }
-
-        function showToast(message) {
-            toast.textContent = message;
-            toast.classList.add('show');
-            clearTimeout(timer);
-            timer = setTimeout(function () { toast.classList.remove('show'); }, 1800);
-        }
-
-        amountInput.addEventListener('input', function () {
-            var value = amountInput.value.replace(/[^\d.]/g, '');
-            var parts = value.split('.');
-            if (parts.length > 2) value = parts.shift() + '.' + parts.join('');
-            parts = value.split('.');
-            if (parts[1] && parts[1].length > 2) value = parts[0] + '.' + parts[1].slice(0, 2);
-            if (parts[0] && parts[0].length > 8) value = parts[0].slice(0, 8) + (parts.length > 1 ? '.' + (parts[1] || '') : '');
-            amountInput.value = value;
-            updateConfirmButton();
+        document.getElementById('recipientAvatarImage').src = defaultAvatar;
+        document.getElementById('recipientAvatarImage').addEventListener('error', function () {
+            this.src = 'img/default-transfer-avatar.png';
         });
 
+        function updateAmount() {
+            amountInput.value = amount;
+            var isValid = Number(amount) > 0;
+            confirmButton.disabled = !isValid;
+            confirmButton.classList.toggle('enabled', isValid);
+        }
+
+        function appendAmount(value) {
+            if (value === '.') {
+                if (amount.indexOf('.') !== -1) return;
+                amount = amount || '0';
+                amount += '.';
+            } else if (amount === '0') {
+                amount = value;
+            } else if (amount.indexOf('.') === -1 || amount.split('.')[1].length < 2) {
+                var integerPart = amount.split('.')[0];
+                if (integerPart.length >= 8 && amount.indexOf('.') === -1) return;
+                amount += value;
+            }
+            updateAmount();
+            amountInput.focus({ preventScroll:true });
+        }
+
+        function deleteAmount() {
+            amount = amount.slice(0, -1);
+            updateAmount();
+            amountInput.focus({ preventScroll:true });
+        }
+
+        document.querySelectorAll('[data-key]').forEach(function (button) {
+            button.addEventListener('click', function () { appendAmount(button.getAttribute('data-key')); });
+        });
+        document.querySelector('[data-action="delete"]').addEventListener('click', deleteAmount);
+        amountEditor.addEventListener('click', function () { amountInput.focus({ preventScroll:true }); });
+        document.addEventListener('keydown', function (event) {
+            if (/^\d$/.test(event.key) || event.key === '.') {
+                event.preventDefault();
+                appendAmount(event.key);
+            } else if (event.key === 'Backspace') {
+                event.preventDefault();
+                deleteAmount();
+            }
+        });
         document.getElementById('backButton').addEventListener('click', function () {
             if (history.length > 1) history.back();
             else window.location.href = 'index.html';
         });
         confirmButton.addEventListener('click', function () {
-            window.location.href = 'success.html?name=' + encodeURIComponent(recipient) + '&amount=' + encodeURIComponent(amountInput.value);
+            if (confirmButton.disabled) return;
+            window.location.href = 'success.html?name=' + encodeURIComponent(recipient) + '&amount=' + encodeURIComponent(amount);
         });
+        updateAmount();
     }());
 </script>
 </body>
