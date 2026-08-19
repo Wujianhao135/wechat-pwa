@@ -1,8 +1,9 @@
-const CACHE_NAME = 'wechat-pwa-v15';
+const CACHE_NAME = 'wechat-pwa-v16';
 const APP_FILES = [
     './',
     './index.html',
     './scan.html',
+    './settings.html',
     './transfer.html',
     './success.html',
     './manifest.webmanifest',
@@ -14,6 +15,7 @@ const APP_FILES = [
     './js/ocr/core/tesseract-core-lstm.wasm.js',
     './js/ocr/core/tesseract-core-simd-lstm.wasm.js',
     './js/ocr/lang/chi_sim.traineddata.gz',
+    './js/ocr/lang/eng.traineddata.gz',
     './img/mmexport1787144425409.jpg',
     './img/mmexport1787144417901.jpg',
     './img/mmexport1787144411359.jpg',

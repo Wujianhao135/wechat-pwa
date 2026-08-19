@@ -56,6 +56,23 @@
         .tab-icon { height:31px; position:relative; }.tab-badge { min-width:42px; height:31px; padding:0 10px; position:absolute; top:-5px; right:-28px; display:grid; place-items:center; border:2px solid var(--white); border-radius:18px; background:var(--red); color:#fff; font-size:20px; line-height:24px; }
         .tab-badge.dot { width:17px; min-width:17px; height:17px; padding:0; top:-6px; right:-8px; border-width:1px; }
         .tab-art { width:auto; height:47px; max-width:74px; display:block; object-fit:contain; }
+        .me-sheet { position:absolute; inset:0; z-index:8; display:flex; align-items:flex-end; visibility:hidden; background:rgba(0,0,0,0); transition:background .2s,visibility .2s; }
+        .me-sheet.open { visibility:visible; background:rgba(0,0,0,.36); }
+        .me-panel { width:100%; padding:0 16px calc(18px + env(safe-area-inset-bottom)); background:#f7f7f7; border-radius:12px 12px 0 0; transform:translateY(100%); transition:transform .22s ease-out; }
+        .me-sheet.open .me-panel { transform:translateY(0); }
+        .me-header { height:58px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #e5e5e5; }
+        .me-header h2 { margin:0; font-size:18px; font-weight:600; }
+        .me-close { width:38px; height:38px; display:grid; place-items:center; background:transparent; color:#555; border-radius:50%; }
+        .me-close:active { background:#e8e8e8; }
+        .me-close svg { width:22px; height:22px; }
+        .setting-entry { width:100%; min-height:64px; padding:0 2px; display:flex; align-items:center; gap:12px; background:transparent; color:var(--text); text-align:left; border-bottom:1px solid #e5e5e5; }
+        .setting-entry:active { background:#ededed; }
+        .setting-entry svg { width:24px; height:24px; color:var(--green); }
+        .setting-entry-copy { flex:1; min-width:0; }
+        .setting-entry-title { display:block; font-size:16px; line-height:22px; }
+        .setting-entry-note { display:block; margin-top:2px; color:var(--muted); font-size:12px; line-height:17px; }
+        .setting-entry-arrow { color:#aaa; }
+        .setting-entry-arrow svg { width:20px; height:20px; color:inherit; }
         .sr-only { width:1px; height:1px; padding:0; position:absolute; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
         @media (max-width:520px) {
             .chat-item { min-height:70px; padding:10px 12px 10px 16px; gap:12px; overflow:hidden; }
@@ -100,6 +117,14 @@
         <button class="fold-row" id="foldButton"><span class="fold-icon"><i data-lucide="list"></i></span><span class="fold-text">折叠置顶聊天</span><span class="fold-arrow"><i data-lucide="chevron-up"></i></span></button>
     </main>
     <nav class="tabbar" aria-label="主导航"><button class="tab active" data-tab="微信"><img class="tab-art" src="img/bottom/t1.png" alt=""><span class="sr-only">微信</span></button><button class="tab" data-tab="通讯录"><img class="tab-art" src="img/bottom/t2.png" alt=""><span class="sr-only">通讯录</span></button><button class="tab" data-tab="发现"><img class="tab-art" src="img/bottom/t3.png" alt=""><span class="sr-only">发现</span></button><button class="tab" data-tab="我"><img class="tab-art" src="img/bottom/t4.png" alt=""><span class="sr-only">我</span></button></nav>
+    <div class="me-sheet" id="meSheet" aria-hidden="true">
+        <section class="me-panel" role="dialog" aria-modal="true" aria-labelledby="meTitle">
+            <header class="me-header"><h2 id="meTitle">我</h2><button class="me-close" id="meCloseButton" type="button" aria-label="关闭"><i data-lucide="x"></i></button></header>
+            <button class="setting-entry" id="scanSettingsEntry" type="button">
+                <i data-lucide="settings-2"></i><span class="setting-entry-copy"><span class="setting-entry-title">扫一扫设置</span><span class="setting-entry-note">设置默认转账人和 OCR 识别方式</span></span><span class="setting-entry-arrow"><i data-lucide="chevron-right"></i></span>
+            </button>
+        </section>
+    </div>
 </div>
 <script>
     (function () {
@@ -109,10 +134,31 @@
         lucide.createIcons();
         document.getElementById('pageTitle').textContent = '微信(' + unreadTotal + ')';
         document.getElementById('searchButton').addEventListener('click', function () { window.location.href = 'search.html'; });
-        document.getElementById('scanButton').addEventListener('click', function () { window.location.href = 'scan.html?v=15'; });
+        document.getElementById('scanButton').addEventListener('click', function () { window.location.href = 'scan.html?v=16'; });
         chatItems.forEach(function (item) { item.addEventListener('click', function () { window.alert('进入聊天：' + item.getAttribute('data-name')); }); });
         document.getElementById('foldButton').addEventListener('click', function () { window.alert('置顶聊天已折叠'); });
-        tabs.forEach(function (tab) { tab.addEventListener('click', function () { if (tab.getAttribute('data-tab') !== '微信') { window.alert(tab.getAttribute('data-tab') + '页面待开发'); return; } tabs.forEach(function (item) { item.classList.toggle('active', item === tab); }); }); });
+        var meSheet = document.getElementById('meSheet');
+        function closeMeSheet() {
+            meSheet.classList.remove('open');
+            meSheet.setAttribute('aria-hidden', 'true');
+            tabs.forEach(function (item) { item.classList.toggle('active', item.getAttribute('data-tab') === '微信'); });
+        }
+        document.getElementById('scanSettingsEntry').addEventListener('click', function () { window.location.href = 'settings.html'; });
+        document.getElementById('meCloseButton').addEventListener('click', closeMeSheet);
+        meSheet.addEventListener('click', function (event) { if (event.target === meSheet) closeMeSheet(); });
+        tabs.forEach(function (tab) {
+            tab.addEventListener('click', function () {
+                var tabName = tab.getAttribute('data-tab');
+                if (tabName === '我') {
+                    tabs.forEach(function (item) { item.classList.toggle('active', item === tab); });
+                    meSheet.classList.add('open');
+                    meSheet.setAttribute('aria-hidden', 'false');
+                    return;
+                }
+                if (tabName !== '微信') { window.alert(tabName + '页面待开发'); return; }
+                closeMeSheet();
+            });
+        });
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', function () {
                 var refreshing = false;
@@ -121,7 +167,7 @@
                     refreshing = true;
                     window.location.reload();
                 });
-                navigator.serviceWorker.register('service-worker.js?v=15', { updateViaCache: 'none' }).then(function (registration) {
+            navigator.serviceWorker.register('service-worker.js?v=16', { updateViaCache: 'none' }).then(function (registration) {
                     registration.update();
                 });
             });

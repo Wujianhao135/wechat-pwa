@@ -18,7 +18,8 @@
         * { box-sizing:border-box; }
         html,body { width:100%; height:100%; overflow:hidden; }
         body { margin:0; min-height:100dvh; background:#000; color:var(--white); font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Microsoft YaHei",sans-serif; -webkit-font-smoothing:antialiased; }
-        button { border:0; font:inherit; cursor:pointer; }
+        button,input { font:inherit; }
+        button { border:0; cursor:pointer; }
         .scan-app { width:100%; max-width:520px; min-height:100dvh; margin:0 auto; position:relative; overflow:hidden; background:#77736f; isolation:isolate; }
         .viewfinder { position:absolute; inset:0; z-index:0; overflow:hidden; background:#77736f; cursor:pointer; }
         .viewfinder:focus-visible { outline:2px solid var(--green); outline-offset:-2px; }
@@ -30,8 +31,8 @@
         .top-button { width:44px; height:44px; display:grid; place-items:center; pointer-events:auto; color:#76716e; background:rgba(255,255,255,.95); border-radius:50%; }
         .top-button:active { opacity:.72; }
         .top-button svg { width:26px; height:26px; stroke-width:2.3; }
-        .more-button { background:transparent; color:#fff; }
-        .more-button svg { width:31px; height:31px; stroke-width:2.8; }
+        .settings-button { background:rgba(30,30,30,.48); color:#fff; }
+        .settings-button svg { width:25px; height:25px; stroke-width:2.1; }
         .privacy-dot { width:8px; height:8px; position:absolute; top:calc(10px + env(safe-area-inset-top)); right:26px; border-radius:50%; background:#1fdf73; box-shadow:0 0 4px rgba(31,223,115,.7); }
         .scan-main { position:absolute; inset:0 0 var(--mode-height); z-index:3; pointer-events:none; }
         .hint { width:100%; margin:0; padding:0 22px; position:absolute; bottom:196px; color:rgba(255,255,255,.88); font-size:17px; font-weight:400; line-height:24px; text-align:center; letter-spacing:0; text-shadow:0 1px 3px rgba(0,0,0,.4); }
@@ -61,9 +62,9 @@
 <body>
 <div class="scan-app">
     <div class="viewfinder" id="viewfinder" role="button" tabindex="0" aria-label="轻触开启摄像头"><video class="camera-video" id="cameraVideo" autoplay playsinline muted></video><div class="camera-shade"></div><span class="scan-beam" aria-hidden="true"></span></div>
-    <header class="top-controls"><button class="top-button" id="backButton" aria-label="关闭扫一扫"><i data-lucide="x"></i></button><button class="top-button more-button" id="moreButton" aria-label="更多"><i data-lucide="ellipsis"></i></button><span class="privacy-dot" aria-hidden="true"></span></header>
+    <header class="top-controls"><button class="top-button" id="backButton" aria-label="关闭扫一扫"><i data-lucide="x"></i></button><button class="top-button settings-button" id="settingsButton" aria-label="转账人名称设置"><i data-lucide="settings"></i></button><span class="privacy-dot" aria-hidden="true"></span></header>
     <main class="scan-main">
-        <p class="hint" id="hint">识别二维码 / 花草 / 动物 / 商品等</p>
+        <p class="hint" id="hint">请将二维码下方的网名对准画面中央</p>
         <div class="bottom-actions"><button class="action-button qr-button" id="myQrButton"><i data-lucide="qr-code"></i><span class="qr-copy"><span class="qr-title">我的二维码 <span class="new-badge">NEW</span></span><span class="qr-subtitle">添加朋友、收照片、收红包</span></span></button><button class="action-button album-button" id="albumButton" aria-label="相册"><i data-lucide="image"></i></button></div>
     </main>
     <nav class="mode-bar" aria-label="扫一扫模式"><button class="mode-button active" type="button">扫一扫</button><button class="mode-button" id="translateButton" type="button">翻译</button></nav>
@@ -88,6 +89,36 @@
         var ocrTimer;
         var ocrCandidate = '';
         var ocrCandidateCount = 0;
+        var ocrFailureCount = 0;
+        var scanSettings = null;
+        var OCR_SPEEDS = {
+            fast: { interval: 800, confirmations: 1 },
+            balanced: { interval: 1600, confirmations: 2 },
+            accurate: { interval: 3000, confirmations: 3 }
+        };
+
+        function readScanSettings() {
+            var speed = localStorage.getItem('scan_ocr_speed') || 'balanced';
+            return {
+                customName: cleanOcrName(localStorage.getItem('scan_custom_name') || ''),
+                useCustom: localStorage.getItem('scan_use_custom') === 'true',
+                speed: OCR_SPEEDS[speed] ? speed : 'balanced',
+                showOcrText: localStorage.getItem('scan_show_ocr_text') !== 'false'
+            };
+        }
+
+        function defaultHint() {
+            return '请将二维码下方的网名对准画面中央';
+        }
+
+        function setHint(message, isRecognizing) {
+            if (!scanSettings || scanSettings.showOcrText || !isRecognizing) {
+                hint.textContent = message;
+            } else {
+                hint.textContent = defaultHint();
+            }
+            hint.classList.toggle('recognizing', Boolean(isRecognizing));
+        }
 
         function openTransferPage(scannedValue) {
             var scannedName = cleanOcrName(scannedValue);
@@ -160,7 +191,7 @@
                 width: visible.width * 0.84,
                 height: visible.height * 0.18
             };
-            var outputWidth = 1200;
+            var outputWidth = scanSettings && scanSettings.speed === 'fast' ? 960 : 1200;
             var outputHeight = Math.max(300, Math.round(outputWidth * crop.height / crop.width));
             canvas.width = outputWidth;
             canvas.height = outputHeight;
@@ -181,19 +212,19 @@
         async function createOcrWorker() {
             if (ocrWorker || ocrLoading || !window.Tesseract) return ocrWorker;
             ocrLoading = true;
-            hint.textContent = '正在加载中文识别组件...';
+            setHint('正在加载中英文识别组件...', true);
             hint.classList.add('recognizing');
             try {
                 var assetRoot = new URL('js/ocr/', document.baseURI).href;
-                ocrWorker = await Tesseract.createWorker('chi_sim', 1, {
+                ocrWorker = await Tesseract.createWorker('chi_sim+eng', 1, {
                     workerPath: assetRoot + 'worker.min.js',
                     langPath: assetRoot + 'lang',
                     corePath: assetRoot + 'core'
                 });
-                await ocrWorker.setParameters({ tessedit_pageseg_mode: '6', preserve_interword_spaces: '0' });
+                await ocrWorker.setParameters({ tessedit_pageseg_mode: '7', preserve_interword_spaces: '0' });
                 return ocrWorker;
             } catch (error) {
-                hint.textContent = '中文识别组件加载失败，请刷新页面后重试';
+                setHint('中英文识别组件加载失败，请刷新页面后重试', false);
                 showToast('OCR 加载失败');
                 return null;
             } finally {
@@ -208,29 +239,42 @@
                 var result = await ocrWorker.recognize(prepareNameCrop());
                 var recognizedName = selectOcrName(result && result.data ? result.data.text : '');
                 if (isPlausibleName(recognizedName)) {
+                    ocrFailureCount = 0;
                     if (recognizedName === ocrCandidate) ocrCandidateCount += 1;
                     else { ocrCandidate = recognizedName; ocrCandidateCount = 1; }
-                    hint.textContent = '正在确认网名：' + recognizedName;
-                    if (ocrCandidateCount >= 2) {
+                    setHint('正在确认网名：' + recognizedName, true);
+                    if (ocrCandidateCount >= OCR_SPEEDS[scanSettings.speed].confirmations) {
                         openTransferPage(recognizedName);
                         return;
                     }
                 } else {
-                    hint.textContent = '请将二维码下方的网名对准画面中央';
+                    ocrFailureCount += 1;
+                    setHint(defaultHint(), false);
+                    if (scanSettings.customName && ocrFailureCount >= 3) {
+                        showToast('未识别到网名，使用默认转账人');
+                        openTransferPage(scanSettings.customName);
+                        return;
+                    }
                 }
             } catch (error) {
-                hint.textContent = '请将二维码下方的网名对准画面中央';
+                ocrFailureCount += 1;
+                setHint(defaultHint(), false);
+                if (scanSettings.customName && ocrFailureCount >= 3) {
+                    showToast('识别失败，使用默认转账人');
+                    openTransferPage(scanSettings.customName);
+                    return;
+                }
             } finally {
                 ocrRunning = false;
-                if (scanning) ocrTimer = setTimeout(recognizeName, 1600);
+                if (scanning) ocrTimer = setTimeout(recognizeName, OCR_SPEEDS[scanSettings.speed].interval);
             }
         }
 
         async function startOcr() {
             var worker = await createOcrWorker();
             if (worker && scanning) {
-                hint.textContent = '请将二维码下方的网名对准画面中央';
-                ocrTimer = setTimeout(recognizeName, 900);
+                setHint(defaultHint(), false);
+                ocrTimer = setTimeout(recognizeName, OCR_SPEEDS[scanSettings.speed].interval);
             }
         }
 
@@ -241,11 +285,21 @@
                 return;
             }
             try {
-                hint.textContent = '请将二维码放入取景框内';
+                hint.textContent = '请将二维码下方的网名放入取景框内';
                 stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false });
                 video.srcObject = stream;
                 viewfinder.classList.add('camera-on');
                 scanning = true;
+                scanSettings = readScanSettings();
+                if (scanSettings.useCustom) {
+                    if (scanSettings.customName) {
+                        openTransferPage(scanSettings.customName);
+                    } else {
+                        setHint('请先在设置中填写转账人名称', false);
+                        showToast('请先在设置中填写转账人名称');
+                    }
+                    return;
+                }
                 startOcr();
             } catch (error) {
                 hint.textContent = '无法打开摄像头，请允许浏览器使用摄像头后重试';
@@ -261,11 +315,14 @@
             }
         });
         document.getElementById('backButton').addEventListener('click', function () { if (history.length > 1) history.back(); else window.location.href = 'index.html'; });
-        document.getElementById('moreButton').addEventListener('click', function () { showToast('更多功能即将上线'); });
+        document.getElementById('settingsButton').addEventListener('click', function () { window.location.href = 'settings.html'; });
         document.getElementById('myQrButton').addEventListener('click', function () { showToast('我的二维码功能即将上线'); });
         document.getElementById('albumButton').addEventListener('click', function () { showToast('相册功能即将上线'); });
         document.getElementById('translateButton').addEventListener('click', function () { showToast('翻译功能即将上线'); });
-        window.addEventListener('load', function () { if (!params.has('preview') && window.location.protocol !== 'file:') startCamera(); });
+        window.addEventListener('load', function () {
+            scanSettings = readScanSettings();
+            if (!params.has('preview') && window.location.protocol !== 'file:') startCamera();
+        });
         window.addEventListener('pagehide', function () {
             stopCamera();
             if (ocrWorker) ocrWorker.terminate();
