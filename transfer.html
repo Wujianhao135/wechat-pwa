@@ -26,7 +26,8 @@
         .back-button svg { width:23px; height:23px; }
         .content { flex:1; padding:24px 16px max(24px,env(safe-area-inset-bottom)); display:flex; flex-direction:column; }
         .recipient { padding:22px 16px 24px; display:flex; flex-direction:column; align-items:center; background:var(--surface); border-bottom:1px solid var(--line); }
-        .avatar { width:64px; height:64px; display:grid; place-items:center; background:#5689ca; color:#fff; border-radius:6px; font-size:28px; font-weight:500; }
+        .avatar { width:64px; height:64px; display:grid; place-items:center; overflow:hidden; background:#5689ca; color:#fff; border-radius:6px; font-size:28px; font-weight:500; }
+        .avatar img { width:100%; height:100%; display:block; object-fit:cover; }
         .nickname { margin:12px 0 0; font-size:17px; font-weight:500; }
         .amount-panel { padding:24px 20px 20px; background:var(--surface); }
         .amount-label { margin:0 0 14px; font-size:14px; }
@@ -52,7 +53,7 @@
     </header>
     <main class="content">
         <section class="recipient" aria-label="收款人信息">
-            <div class="avatar" id="recipientAvatar">X</div>
+            <div class="avatar" id="recipientAvatar"><img id="recipientAvatarImage" src="img/default-transfer-avatar.png" alt="收款人头像"></div>
             <p class="nickname" id="recipientName">XXX</p>
         </section>
         <section class="amount-panel">
@@ -77,11 +78,13 @@
         var timer;
         var params = new URLSearchParams(window.location.search);
         var recipient = (params.get('name') || 'XXX').slice(0, 20);
+        var avatarImage = document.getElementById('recipientAvatarImage');
+        var defaultAvatar = localStorage.getItem('scan_default_avatar') || 'img/default-transfer-avatar.png';
 
         document.title = '转账给 ' + recipient;
         document.getElementById('pageTitle').textContent = '转账给 ' + recipient;
         document.getElementById('recipientName').textContent = recipient;
-        document.getElementById('recipientAvatar').textContent = recipient.charAt(0).toUpperCase();
+        avatarImage.src = defaultAvatar;
 
         function updateConfirmButton() {
             var amount = Number(amountInput.value);

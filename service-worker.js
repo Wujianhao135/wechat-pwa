@@ -1,4 +1,4 @@
-const CACHE_NAME = 'wechat-pwa-v16';
+const CACHE_NAME = 'wechat-pwa-v17';
 const APP_FILES = [
     './',
     './index.html',
@@ -24,6 +24,7 @@ const APP_FILES = [
     './img/mmexport1787144389657.jpg',
     './img/mmexport1787144381595.jpg',
     './img/mmexport1787144375708.jpg',
+    './img/default-transfer-avatar.png',
     './img/bottom/t1.png',
     './img/bottom/t2.png',
     './img/bottom/t3.png',

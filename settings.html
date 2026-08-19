@@ -35,6 +35,20 @@
         .name-input { width:100%; height:46px; padding:0 12px; border:1px solid #d8d8d8; outline:0; color:var(--text); background:#fff; border-radius:5px; font-size:16px; }
         .name-input:focus { border-color:var(--green); box-shadow:0 0 0 2px rgba(7,193,96,.12); }
         .name-input::placeholder { color:#aaa; }
+        .avatar-setting-row { min-height:112px; padding:16px; display:flex; align-items:center; gap:14px; border-top:1px solid var(--line); }
+        .avatar-preview { width:76px; height:76px; flex:0 0 76px; overflow:hidden; background:#f5f5f5; border:1px solid #e1e1e1; border-radius:8px; }
+        .avatar-preview img { width:100%; height:100%; display:block; object-fit:cover; }
+        .avatar-setting-copy { min-width:0; flex:1; }
+        .avatar-label { display:block; font-size:16px; line-height:22px; }
+        .avatar-note { display:block; margin-top:3px; color:var(--muted); font-size:12px; line-height:18px; }
+        .avatar-actions { margin-top:9px; display:flex; align-items:center; gap:14px; }
+        .avatar-upload, .avatar-reset { min-height:30px; padding:0 10px; display:inline-flex; align-items:center; justify-content:center; gap:5px; border-radius:4px; font-size:13px; }
+        .avatar-upload { color:#fff; background:var(--green); }
+        .avatar-upload:active { background:#06ad56; }
+        .avatar-reset { color:#666; background:#eee; }
+        .avatar-reset:active { background:#e1e1e1; }
+        .avatar-upload svg { width:15px; height:15px; }
+        .avatar-input { width:1px; height:1px; position:absolute; opacity:0; pointer-events:none; }
         .switch-row { min-height:68px; padding:13px 16px; display:flex; align-items:center; justify-content:space-between; gap:16px; border-top:1px solid var(--line); }
         .switch-copy { min-width:0; }
         .switch-title { display:block; font-size:16px; line-height:22px; }
@@ -75,6 +89,18 @@
                 <div class="field-row">
                     <label class="field-label" for="customNameInput">默认转账人名称</label>
                     <input class="name-input" id="customNameInput" type="text" maxlength="20" autocomplete="off" placeholder="请输入转账人名称">
+                </div>
+                <div class="avatar-setting-row">
+                    <div class="avatar-preview"><img id="avatarPreview" src="img/default-transfer-avatar.png" alt="默认转账头像预览"></div>
+                    <div class="avatar-setting-copy">
+                        <span class="avatar-label">默认转账头像</span>
+                        <span class="avatar-note">转账页会显示这张头像，图片只保存在本机</span>
+                        <div class="avatar-actions">
+                            <label class="avatar-upload" for="avatarInput"><i data-lucide="upload"></i>选择图片</label>
+                            <button class="avatar-reset" id="resetAvatarButton" type="button">恢复默认</button>
+                        </div>
+                        <input class="avatar-input" id="avatarInput" type="file" accept="image/*">
+                    </div>
                 </div>
                 <label class="switch-row" for="preferCustomSwitch">
                     <span class="switch-copy"><span class="switch-title">优先使用自定义名称</span><span class="switch-note">开启后扫码将跳过 OCR，直接使用上方填写的名称</span></span>
@@ -128,8 +154,15 @@
         var preferCustomSwitch = document.getElementById('preferCustomSwitch');
         var showOcrText = document.getElementById('showOcrText');
         var speedRadios = document.querySelectorAll('input[name="ocrSpeed"]');
+        var avatarInput = document.getElementById('avatarInput');
+        var avatarPreview = document.getElementById('avatarPreview');
+        var selectedAvatarData = '';
         var toast = document.getElementById('toast');
         var toastTimer;
+
+        function setAvatarPreview(source) {
+            avatarPreview.src = source || 'img/default-transfer-avatar.png';
+        }
 
         function readSettings() {
             var savedSpeed = localStorage.getItem('scan_ocr_speed') || 'balanced';
@@ -137,7 +170,40 @@
             customNameInput.value = localStorage.getItem('scan_custom_name') || '';
             preferCustomSwitch.checked = localStorage.getItem('scan_use_custom') === 'true';
             showOcrText.checked = localStorage.getItem('scan_show_ocr_text') !== 'false';
+            selectedAvatarData = localStorage.getItem('scan_default_avatar') || '';
+            setAvatarPreview(selectedAvatarData);
             speedRadios.forEach(function (radio) { radio.checked = radio.value === speed; });
+        }
+
+        function prepareAvatar(file) {
+            if (!file || !file.type.startsWith('image/')) {
+                showToast('请选择图片文件');
+                return;
+            }
+            var reader = new FileReader();
+            reader.onload = function () {
+                var image = new Image();
+                image.onload = function () {
+                    var side = 256;
+                    var canvas = document.createElement('canvas');
+                    var context = canvas.getContext('2d');
+                    var sourceSide = Math.min(image.naturalWidth, image.naturalHeight);
+                    var sourceX = (image.naturalWidth - sourceSide) / 2;
+                    var sourceY = (image.naturalHeight - sourceSide) / 2;
+                    canvas.width = side;
+                    canvas.height = side;
+                    context.fillStyle = '#ffffff';
+                    context.fillRect(0, 0, side, side);
+                    context.drawImage(image, sourceX, sourceY, sourceSide, sourceSide, 0, 0, side, side);
+                    selectedAvatarData = canvas.toDataURL('image/jpeg', 0.86);
+                    setAvatarPreview(selectedAvatarData);
+                    showToast('头像已选择，请保存设置');
+                };
+                image.onerror = function () { showToast('图片读取失败，请重试'); };
+                image.src = reader.result;
+            };
+            reader.onerror = function () { showToast('图片读取失败，请重试'); };
+            reader.readAsDataURL(file);
         }
 
         function showToast(message) {
@@ -152,7 +218,15 @@
             localStorage.setItem('scan_use_custom', String(preferCustomSwitch.checked));
             localStorage.setItem('scan_ocr_speed', Array.prototype.find.call(speedRadios, function (radio) { return radio.checked; }).value);
             localStorage.setItem('scan_show_ocr_text', String(showOcrText.checked));
+            if (selectedAvatarData) localStorage.setItem('scan_default_avatar', selectedAvatarData);
+            else localStorage.removeItem('scan_default_avatar');
             showToast('设置已保存');
+        });
+        avatarInput.addEventListener('change', function () { prepareAvatar(avatarInput.files[0]); avatarInput.value = ''; });
+        document.getElementById('resetAvatarButton').addEventListener('click', function () {
+            selectedAvatarData = '';
+            setAvatarPreview('');
+            showToast('已恢复默认头像，请保存设置');
         });
         document.getElementById('backButton').addEventListener('click', function () {
             if (history.length > 1) history.back();
