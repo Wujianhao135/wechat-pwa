@@ -1,4 +1,4 @@
-const CACHE_NAME = 'wechat-pwa-v13';
+const CACHE_NAME = 'wechat-pwa-v15';
 const APP_FILES = [
     './',
     './index.html',
@@ -7,7 +7,13 @@ const APP_FILES = [
     './success.html',
     './manifest.webmanifest',
     './js/lucide.min.js',
-    './js/jsQR.min.js',
+    './js/ocr/tesseract.min.js',
+    './js/ocr/worker.min.js',
+    './js/ocr/core/tesseract-core.wasm.js',
+    './js/ocr/core/tesseract-core-simd.wasm.js',
+    './js/ocr/core/tesseract-core-lstm.wasm.js',
+    './js/ocr/core/tesseract-core-simd-lstm.wasm.js',
+    './js/ocr/lang/chi_sim.traineddata.gz',
     './img/mmexport1787144425409.jpg',
     './img/mmexport1787144417901.jpg',
     './img/mmexport1787144411359.jpg',
@@ -52,6 +58,30 @@ self.addEventListener('activate', function (event) {
 
 self.addEventListener('fetch', function (event) {
     if (event.request.method !== 'GET') {
+        return;
+    }
+
+    const requestUrl = new URL(event.request.url);
+    const isPageRequest = event.request.mode === 'navigate' ||
+        event.request.destination === 'document' ||
+        requestUrl.pathname.endsWith('.html');
+
+    if (isPageRequest) {
+        event.respondWith(
+            fetch(event.request, { cache: 'no-store' }).then(function (networkResponse) {
+                if (networkResponse && networkResponse.status === 200 && requestUrl.origin === self.location.origin) {
+                    const responseCopy = networkResponse.clone();
+                    caches.open(CACHE_NAME).then(function (cache) {
+                        cache.put(event.request, responseCopy);
+                    });
+                }
+                return networkResponse;
+            }).catch(function () {
+                return caches.match(event.request).then(function (cachedResponse) {
+                    return cachedResponse || caches.match('./index.html');
+                });
+            })
+        );
         return;
     }
 

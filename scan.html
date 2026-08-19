@@ -12,7 +12,7 @@
     <link rel="icon" href="icons/app-icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="icons/app-icon-180.png">
     <script src="js/lucide.min.js"></script>
-    <script src="js/jsQR.min.js"></script>
+    <script src="js/ocr/tesseract.min.js"></script>
     <style>
         :root { --green:#07c160; --white:#fff; --mode-height:calc(96px + env(safe-area-inset-bottom)); }
         * { box-sizing:border-box; }
@@ -34,7 +34,8 @@
         .more-button svg { width:31px; height:31px; stroke-width:2.8; }
         .privacy-dot { width:8px; height:8px; position:absolute; top:calc(10px + env(safe-area-inset-top)); right:26px; border-radius:50%; background:#1fdf73; box-shadow:0 0 4px rgba(31,223,115,.7); }
         .scan-main { position:absolute; inset:0 0 var(--mode-height); z-index:3; pointer-events:none; }
-        .hint { width:100%; margin:0; padding:0 22px; position:absolute; bottom:196px; color:rgba(255,255,255,.88); font-size:17px; font-weight:400; line-height:24px; text-align:center; letter-spacing:0; }
+        .hint { width:100%; margin:0; padding:0 22px; position:absolute; bottom:196px; color:rgba(255,255,255,.88); font-size:17px; font-weight:400; line-height:24px; text-align:center; letter-spacing:0; text-shadow:0 1px 3px rgba(0,0,0,.4); }
+        .hint.recognizing { color:#bfffd8; }
         .bottom-actions { position:absolute; right:22px; bottom:28px; left:22px; display:flex; align-items:center; justify-content:space-between; }
         .action-button { pointer-events:auto; color:#fff; background:rgba(45,43,41,.62); -webkit-backdrop-filter:blur(12px); backdrop-filter:blur(12px); }
         .action-button:active { background:rgba(45,43,41,.78); }
@@ -73,7 +74,6 @@
     (function () {
         lucide.createIcons();
         var params = new URLSearchParams(window.location.search);
-        var recipient = (params.get('name') || '林小北').slice(0, 20);
         var viewfinder = document.getElementById('viewfinder');
         var video = document.getElementById('cameraVideo');
         var canvas = document.getElementById('scanCanvas');
@@ -82,10 +82,16 @@
         var stream;
         var scanning = false;
         var timer;
+        var ocrWorker;
+        var ocrLoading = false;
+        var ocrRunning = false;
+        var ocrTimer;
+        var ocrCandidate = '';
+        var ocrCandidateCount = 0;
 
         function openTransferPage(scannedValue) {
-            var scannedName = (scannedValue || recipient || '林小北').trim().slice(0, 20);
-            if (!scannedName) scannedName = '林小北';
+            var scannedName = cleanOcrName(scannedValue);
+            if (!isPlausibleName(scannedName)) return;
             stopCamera();
             window.location.href = 'transfer.html?name=' + encodeURIComponent(scannedName);
         }
@@ -99,28 +105,133 @@
 
         function stopCamera() {
             scanning = false;
+            clearTimeout(ocrTimer);
             if (stream) {
                 stream.getTracks().forEach(function (track) { track.stop(); });
                 stream = null;
             }
         }
 
-        function scanFrame() {
-            if (!scanning || video.readyState < 2) {
-                if (scanning) requestAnimationFrame(scanFrame);
-                return;
-            }
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
+        function cleanOcrName(value) {
+            return (value || '')
+                .replace(/[\r\n\t ]+/g, '')
+                .replace(/[|｜丨]/g, '')
+                .replace(/[^\u3400-\u9fffA-Za-z0-9_().（）*·\-]/g, '')
+                .slice(0, 20);
+        }
+
+        function selectOcrName(value) {
+            var candidates = (value || '').split(/\r?\n/).map(function (line) { return cleanOcrName(line); }).filter(function (line) { return line.length > 0; });
+            candidates = candidates.filter(function (line) { return !/二维码|扫一扫|微信支付|识别/.test(line); });
+            candidates.sort(function (left, right) {
+                var leftChinese = (left.match(/[\u3400-\u9fff]/g) || []).length;
+                var rightChinese = (right.match(/[\u3400-\u9fff]/g) || []).length;
+                return rightChinese - leftChinese || right.length - left.length;
+            });
+            return candidates[0] || '';
+        }
+
+        function isPlausibleName(value) {
+            if (!value || /二维码|扫一扫|微信支付|识别/.test(value)) return false;
+            return /[\u3400-\u9fff]{2,}/.test(value) || /[A-Za-z]{3,}/.test(value);
+        }
+
+        function getVisibleSourceRect() {
+            var videoWidth = video.videoWidth;
+            var videoHeight = video.videoHeight;
+            var boxWidth = viewfinder.clientWidth;
+            var boxHeight = viewfinder.clientHeight;
+            var scale = Math.max(boxWidth / videoWidth, boxHeight / videoHeight);
+            var visibleWidth = boxWidth / scale;
+            var visibleHeight = boxHeight / scale;
+            return {
+                x: (videoWidth - visibleWidth) / 2,
+                y: (videoHeight - visibleHeight) / 2,
+                width: visibleWidth,
+                height: visibleHeight
+            };
+        }
+
+        function prepareNameCrop() {
+            var visible = getVisibleSourceRect();
+            var crop = {
+                x: visible.x + visible.width * 0.08,
+                y: visible.y + visible.height * 0.56,
+                width: visible.width * 0.84,
+                height: visible.height * 0.18
+            };
+            var outputWidth = 1200;
+            var outputHeight = Math.max(300, Math.round(outputWidth * crop.height / crop.width));
+            canvas.width = outputWidth;
+            canvas.height = outputHeight;
             var context = canvas.getContext('2d', { willReadFrequently: true });
-            context.drawImage(video, 0, 0, canvas.width, canvas.height);
-            var image = context.getImageData(0, 0, canvas.width, canvas.height);
-            var result = window.jsQR ? window.jsQR(image.data, image.width, image.height, { inversionAttempts: 'dontInvert' }) : null;
-            if (result && result.data) {
-                openTransferPage(result.data);
-                return;
+            context.drawImage(video, crop.x, crop.y, crop.width, crop.height, 0, 0, outputWidth, outputHeight);
+            var image = context.getImageData(0, 0, outputWidth, outputHeight);
+            for (var i = 0; i < image.data.length; i += 4) {
+                var gray = Math.round(image.data[i] * 0.299 + image.data[i + 1] * 0.587 + image.data[i + 2] * 0.114);
+                var contrast = Math.max(0, Math.min(255, (gray - 128) * 1.45 + 128));
+                image.data[i] = contrast;
+                image.data[i + 1] = contrast;
+                image.data[i + 2] = contrast;
             }
-            requestAnimationFrame(scanFrame);
+            context.putImageData(image, 0, 0);
+            return canvas;
+        }
+
+        async function createOcrWorker() {
+            if (ocrWorker || ocrLoading || !window.Tesseract) return ocrWorker;
+            ocrLoading = true;
+            hint.textContent = '正在加载中文识别组件...';
+            hint.classList.add('recognizing');
+            try {
+                var assetRoot = new URL('js/ocr/', document.baseURI).href;
+                ocrWorker = await Tesseract.createWorker('chi_sim', 1, {
+                    workerPath: assetRoot + 'worker.min.js',
+                    langPath: assetRoot + 'lang',
+                    corePath: assetRoot + 'core'
+                });
+                await ocrWorker.setParameters({ tessedit_pageseg_mode: '6', preserve_interword_spaces: '0' });
+                return ocrWorker;
+            } catch (error) {
+                hint.textContent = '中文识别组件加载失败，请刷新页面后重试';
+                showToast('OCR 加载失败');
+                return null;
+            } finally {
+                ocrLoading = false;
+            }
+        }
+
+        async function recognizeName() {
+            if (!scanning || ocrRunning || !ocrWorker || video.readyState < 2) return;
+            ocrRunning = true;
+            try {
+                var result = await ocrWorker.recognize(prepareNameCrop());
+                var recognizedName = selectOcrName(result && result.data ? result.data.text : '');
+                if (isPlausibleName(recognizedName)) {
+                    if (recognizedName === ocrCandidate) ocrCandidateCount += 1;
+                    else { ocrCandidate = recognizedName; ocrCandidateCount = 1; }
+                    hint.textContent = '正在确认网名：' + recognizedName;
+                    if (ocrCandidateCount >= 2) {
+                        openTransferPage(recognizedName);
+                        return;
+                    }
+                } else {
+                    hint.textContent = '请将二维码下方的网名对准画面中央';
+                }
+            } catch (error) {
+                hint.textContent = '请将二维码下方的网名对准画面中央';
+            } finally {
+                ocrRunning = false;
+                if (scanning) ocrTimer = setTimeout(recognizeName, 1600);
+            }
+        }
+
+        async function startOcr() {
+            var worker = await createOcrWorker();
+            if (worker && scanning) {
+                hint.textContent = '请将二维码下方的网名对准画面中央';
+                ocrTimer = setTimeout(recognizeName, 900);
+            }
         }
 
         async function startCamera() {
@@ -135,7 +246,7 @@
                 video.srcObject = stream;
                 viewfinder.classList.add('camera-on');
                 scanning = true;
-                requestAnimationFrame(scanFrame);
+                startOcr();
             } catch (error) {
                 hint.textContent = '无法打开摄像头，请允许浏览器使用摄像头后重试';
                 showToast('摄像头权限未开启');
@@ -155,7 +266,10 @@
         document.getElementById('albumButton').addEventListener('click', function () { showToast('相册功能即将上线'); });
         document.getElementById('translateButton').addEventListener('click', function () { showToast('翻译功能即将上线'); });
         window.addEventListener('load', function () { if (!params.has('preview') && window.location.protocol !== 'file:') startCamera(); });
-        window.addEventListener('pagehide', stopCamera);
+        window.addEventListener('pagehide', function () {
+            stopCamera();
+            if (ocrWorker) ocrWorker.terminate();
+        });
     }());
 </script>
 </body>
