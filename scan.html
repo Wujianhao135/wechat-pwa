@@ -102,9 +102,11 @@
 
         function readScanSettings() {
             var speed = localStorage.getItem('scan_ocr_speed') || 'balanced';
+            var savedDelay = Number.parseInt(localStorage.getItem('scan_custom_delay') || '5', 10);
             return {
                 customName: cleanOcrName(localStorage.getItem('scan_custom_name') || ''),
                 useCustom: localStorage.getItem('scan_use_custom') === 'true',
+                customDelay: Number.isFinite(savedDelay) ? Math.max(1, Math.min(60, savedDelay)) : 5,
                 speed: OCR_SPEEDS[speed] ? speed : 'balanced',
                 showOcrText: localStorage.getItem('scan_show_ocr_text') !== 'false'
             };
@@ -135,7 +137,7 @@
             customTransferTimer = setTimeout(function () {
                 customTransferTimer = null;
                 openTransferPage(scannedName);
-            }, 5000);
+            }, (scanSettings ? scanSettings.customDelay : 5) * 1000);
         }
 
         function showToast(message) {

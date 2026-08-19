@@ -1,4 +1,4 @@
-const CACHE_NAME = 'wechat-pwa-v18';
+const CACHE_NAME = 'wechat-pwa-v19';
 const APP_FILES = [
     './',
     './index.html',

@@ -60,6 +60,12 @@
         .switch-control input:checked + .switch-track { background:var(--green); }
         .switch-control input:checked + .switch-track::after { transform:translateX(20px); }
         .switch-control input:focus-visible + .switch-track { outline:2px solid rgba(7,193,96,.45); outline-offset:2px; }
+        .delay-row { padding:14px 16px 15px; border-top:1px solid var(--line); }
+        .delay-label { display:block; font-size:16px; line-height:22px; }
+        .delay-control { margin-top:8px; display:flex; align-items:center; gap:9px; color:#666; font-size:14px; }
+        .delay-input { width:78px; height:40px; padding:0 10px; border:1px solid #d8d8d8; outline:0; color:var(--text); background:#fff; border-radius:5px; font-size:16px; text-align:center; }
+        .delay-input:focus { border-color:var(--green); box-shadow:0 0 0 2px rgba(7,193,96,.12); }
+        .delay-note { margin:6px 0 0; color:var(--muted); font-size:12px; line-height:18px; }
         .radio-list { padding:4px 16px 8px; }
         .radio-option { min-height:46px; display:flex; align-items:center; gap:10px; color:var(--text); font-size:15px; line-height:20px; cursor:pointer; }
         .radio-option input { width:18px; height:18px; margin:0; accent-color:var(--green); }
@@ -106,6 +112,11 @@
                     <span class="switch-copy"><span class="switch-title">优先使用自定义名称</span><span class="switch-note">开启后扫码将跳过 OCR，直接使用上方填写的名称</span></span>
                     <span class="switch-control"><input id="preferCustomSwitch" type="checkbox"><span class="switch-track" aria-hidden="true"></span></span>
                 </label>
+                <div class="delay-row">
+                    <label class="delay-label" for="customDelayInput">摄像头保持开启，延迟跳转</label>
+                    <div class="delay-control"><input class="delay-input" id="customDelayInput" type="number" min="1" max="60" step="1" inputmode="numeric"><span>秒后进入转账页</span></div>
+                    <p class="delay-note">开启自定义名称后，摄像头会保持画面，并按设置的秒数再跳转。</p>
+                </div>
             </div>
         </section>
         <section class="section">
@@ -133,6 +144,7 @@
                     <li>关闭“优先使用自定义名称”时：扫码后自动 OCR 识别二维码下方的网名并跳转转账页。</li>
                     <li>开启“优先使用自定义名称”时：扫码后直接使用上方填写的名称，跳过 OCR 识别。</li>
                     <li>名称留空且开关开启时：扫码后提示先填写转账人名称。</li>
+                    <li>摄像头保持开启时间：自定义名称模式会保持摄像头画面，等待设置的秒数后再进入转账页。</li>
                 </ul>
                 <p>OCR 识别设置：</p>
                 <ul>
@@ -152,6 +164,7 @@
         lucide.createIcons();
         var customNameInput = document.getElementById('customNameInput');
         var preferCustomSwitch = document.getElementById('preferCustomSwitch');
+        var customDelayInput = document.getElementById('customDelayInput');
         var showOcrText = document.getElementById('showOcrText');
         var speedRadios = document.querySelectorAll('input[name="ocrSpeed"]');
         var avatarInput = document.getElementById('avatarInput');
@@ -167,8 +180,11 @@
         function readSettings() {
             var savedSpeed = localStorage.getItem('scan_ocr_speed') || 'balanced';
             var speed = savedSpeed === 'fast' || savedSpeed === 'accurate' ? savedSpeed : 'balanced';
+            var savedDelay = Number.parseInt(localStorage.getItem('scan_custom_delay') || '5', 10);
+            var delay = Number.isFinite(savedDelay) ? Math.max(1, Math.min(60, savedDelay)) : 5;
             customNameInput.value = localStorage.getItem('scan_custom_name') || '';
             preferCustomSwitch.checked = localStorage.getItem('scan_use_custom') === 'true';
+            customDelayInput.value = delay;
             showOcrText.checked = localStorage.getItem('scan_show_ocr_text') !== 'false';
             selectedAvatarData = localStorage.getItem('scan_default_avatar') || '';
             setAvatarPreview(selectedAvatarData);
@@ -214,13 +230,17 @@
         }
 
         document.getElementById('saveButton').addEventListener('click', function () {
+            var delay = Number.parseInt(customDelayInput.value, 10);
+            delay = Number.isFinite(delay) ? Math.max(1, Math.min(60, delay)) : 5;
             localStorage.setItem('scan_custom_name', customNameInput.value.trim().slice(0, 20));
             localStorage.setItem('scan_use_custom', String(preferCustomSwitch.checked));
+            localStorage.setItem('scan_custom_delay', String(delay));
             localStorage.setItem('scan_ocr_speed', Array.prototype.find.call(speedRadios, function (radio) { return radio.checked; }).value);
             localStorage.setItem('scan_show_ocr_text', String(showOcrText.checked));
             if (selectedAvatarData) localStorage.setItem('scan_default_avatar', selectedAvatarData);
             else localStorage.removeItem('scan_default_avatar');
             showToast('设置已保存');
+            customDelayInput.value = delay;
         });
         avatarInput.addEventListener('change', function () { prepareAvatar(avatarInput.files[0]); avatarInput.value = ''; });
         document.getElementById('resetAvatarButton').addEventListener('click', function () {
