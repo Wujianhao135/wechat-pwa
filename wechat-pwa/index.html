@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#ededed">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="微信">
+    <title>微信(2399)</title>
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="icon" href="icons/app-icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="icons/app-icon-180.png">
+    <script src="js/lucide.min.js"></script>
+    <style>
+        :root { --bg:#ededed; --white:#fff; --text:#1a1a1a; --muted:#888; --light:#aaa; --line:#ddd; --green:#07c160; --red:#fa5151; --top:calc(50px + env(safe-area-inset-top)); --bottom:calc(50px + env(safe-area-inset-bottom)); }
+        * { box-sizing:border-box; }
+        html,body { min-height:100%; }
+        body { margin:0; background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Microsoft YaHei",sans-serif; -webkit-font-smoothing:antialiased; }
+        button { border:0; font:inherit; cursor:pointer; }
+        #app { width:100%; max-width:520px; min-height:100dvh; margin:0 auto; position:relative; overflow:hidden; background:var(--bg); }
+        .topbar { height:var(--top); padding:env(safe-area-inset-top) 10px 0; display:grid; grid-template-columns:1fr auto 1fr; align-items:center; background:var(--bg); border-bottom:1px solid #d9d9d9; }
+        .topbar-spacer { width:30px; height:30px; }
+        .title { margin:0; font-size:27px; font-weight:600; line-height:50px; letter-spacing:0; white-space:nowrap; }
+        .actions { height:50px; justify-self:end; display:flex; align-items:center; gap:8px; }
+        .action { width:38px; height:38px; display:grid; place-items:center; background:transparent; color:#111; border-radius:50%; }
+        .action:active { background:#ddd; }
+        .action svg { width:29px; height:29px; stroke-width:2.2; }
+        .chat-list { height:calc(100dvh - var(--top) - var(--bottom)); overflow-y:auto; background:var(--bg); }
+        .chat-item { width:100%; min-height:105px; padding:20px 26px 20px 56px; display:flex; align-items:center; gap:44px; background:var(--bg); color:var(--text); text-align:left; border-bottom:1px solid var(--line); }
+        .chat-item:active { background:#e4e4e4; }
+        .avatar-wrap { width:168px; height:168px; flex:0 0 168px; position:relative; transform:scale(.46); transform-origin:left center; margin-right:-91px; }
+        .avatar { width:168px; height:168px; display:grid; place-items:center; overflow:hidden; border:1px solid rgba(0,0,0,.05); border-radius:16px; color:#fff; font-size:66px; font-weight:500; }
+        .avatar img { width:100%; height:100%; display:block; object-fit:cover; }
+        .avatar.orange { background:#e6a05f; }.avatar.blue { background:#638fc2; }.avatar.purple { background:#9579bb; }.avatar.green { background:#45aa9e; }.avatar.red { background:#d77972; }.avatar.gray { background:#b9bdc1; }
+        .avatar svg { width:82px; height:82px; stroke-width:1.4; }
+        .group-avatar { padding:8px; display:grid; grid-template-columns:repeat(3,1fr); grid-template-rows:repeat(3,1fr); gap:5px; background:#d8d8d8; }
+        .group-avatar span { display:grid; place-items:center; border-radius:3px; color:#fff; font-size:26px; font-weight:500; }
+        .tile-a { background:#87a86d; }.tile-b { background:#c48e64; }.tile-c { background:#5d9aaf; }.tile-d { background:#667e96; }.tile-e { background:#d2949b; }.tile-f { background:#7e6b98; }.tile-g { background:#bf8c61; }.tile-h { background:#637d9f; }.tile-i { background:#9b9b9b; }
+        .unread-dot { width:30px; height:30px; position:absolute; top:-8px; right:-8px; border:3px solid var(--bg); border-radius:50%; background:var(--red); }
+        .chat-main { min-width:0; flex:1; }
+        .chat-name { margin:0 0 6px; overflow:hidden; font-size:29px; font-weight:500; line-height:35px; white-space:nowrap; text-overflow:ellipsis; }
+        .chat-preview { margin:0; overflow:hidden; color:var(--light); font-size:22px; line-height:29px; white-space:nowrap; text-overflow:ellipsis; }
+        .chat-side { width:115px; align-self:stretch; padding-top:3px; display:flex; flex-direction:column; align-items:flex-end; color:var(--light); }
+        .chat-time { font-size:21px; line-height:28px; white-space:nowrap; }
+        .mute { width:25px; height:25px; margin-top:20px; color:#aaa; }
+        .mute svg { width:25px; height:25px; stroke-width:1.8; }
+        .fold-row { min-height:100px; padding:20px 55px; display:flex; align-items:center; gap:44px; background:var(--bg); color:var(--muted); border-bottom:1px solid var(--line); }
+        .fold-icon { width:168px; flex:0 0 168px; transform:scale(.46); transform-origin:left center; margin-right:-91px; color:#999; }
+        .fold-icon svg { width:168px; height:168px; stroke-width:3; }
+        .fold-text { font-size:25px; }
+        .fold-arrow { margin-left:auto; color:#aaa; }.fold-arrow svg { width:30px; height:30px; stroke-width:2; }
+        .tabbar { height:var(--bottom); padding-bottom:env(safe-area-inset-bottom); position:absolute; right:0; bottom:0; left:0; z-index:5; display:grid; grid-template-columns:repeat(4,1fr); background:var(--white); border-top:1px solid #ddd; }
+        .tab { height:50px; padding:3px 0 0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0; background:transparent; color:#111; font-size:17px; line-height:22px; }
+        .tab svg { width:31px; height:31px; stroke-width:2.2; }.tab.active { color:var(--green); }.tab:not(.active) { color:#111; }
+        .tab-icon { height:31px; position:relative; }.tab-badge { min-width:42px; height:31px; padding:0 10px; position:absolute; top:-5px; right:-28px; display:grid; place-items:center; border:2px solid var(--white); border-radius:18px; background:var(--red); color:#fff; font-size:20px; line-height:24px; }
+        .tab-badge.dot { width:17px; min-width:17px; height:17px; padding:0; top:-6px; right:-8px; border-width:1px; }
+        @media (max-width:520px) {
+            .chat-item { min-height:70px; padding:10px 12px 10px 16px; gap:12px; overflow:hidden; }
+            .avatar-wrap { width:50px; height:50px; flex-basis:50px; transform:none; margin-right:0; }
+            .avatar { width:50px; height:50px; border-radius:7px; font-size:19px; }
+            .group-avatar { padding:3px; gap:2px; }
+            .group-avatar span { font-size:9px; }
+            .unread-dot { width:8px; height:8px; top:-2px; right:-2px; border-width:1px; }
+            .chat-main { min-width:0; max-width:100%; overflow:hidden; }
+            .chat-name, .chat-preview { display:block; min-width:0; max-width:100%; }
+            .chat-name { font-size:16px; line-height:20px; }
+            .chat-preview { font-size:13px; line-height:18px; }
+            .chat-side { width:48px; flex:0 0 48px; }
+            .chat-time { font-size:11px; line-height:18px; }
+            .mute { width:18px; height:18px; margin-top:7px; }
+            .mute svg { width:18px; height:18px; }
+            .fold-row { min-height:70px; padding:10px 16px; gap:12px; }
+            .fold-icon { width:50px; flex-basis:50px; transform:none; margin-right:0; }
+            .fold-icon svg { width:50px; height:50px; }
+            .fold-text { font-size:16px; }
+            .fold-arrow svg { width:22px; height:22px; }
+            .tab { font-size:12px; }
+            .tab svg { width:25px; height:25px; }
+            .tab-icon { height:25px; }
+            .tab-badge { min-width:34px; height:25px; font-size:16px; }
+            .title { font-size:22px; }
+        }
+        @media (min-width:521px) { body { padding:20px 0; } #app { height:calc(100dvh - 40px); min-height:calc(100dvh - 40px); border-radius:8px; box-shadow:0 10px 30px rgba(0,0,0,.16); }.chat-list { height:calc(100% - var(--top) - var(--bottom)); } }
+    </style>
+</head>
+<body>
+<div id="app">
+    <header class="topbar"><span class="topbar-spacer" aria-hidden="true"></span><h1 class="title" id="pageTitle">微信(2399)</h1><div class="actions"><button class="action" id="searchButton" aria-label="搜索"><i data-lucide="search"></i></button><button class="action" id="scanButton" aria-label="扫一扫"><i data-lucide="plus-circle"></i></button></div></header>
+    <main class="chat-list">
+        <button class="chat-item" data-name="小宝大王0421" data-unread="1200"><span class="avatar-wrap"><span class="avatar"><img src="img/mmexport1787144425409.jpg" alt="小宝大王0421头像"></span><span class="unread-dot"></span></span><span class="chat-main"><span class="chat-name">小宝大王0421</span><span class="chat-preview">😂</span></span><span class="chat-side"><span class="chat-time">19:22</span></span></button>
+        <button class="chat-item" data-name="硕博保毕业SOS④⑨群" data-unread="1199"><span class="avatar-wrap"><span class="avatar"><img src="img/mmexport1787144417901.jpg" alt="硕博保毕业群头像"></span><span class="unread-dot"></span></span><span class="chat-main"><span class="chat-name">硕博保毕业<span style="color:#f22;font-size:.82em">SOS</span>④⑨群</span><span class="chat-preview">[371条] 区块链dd: 但没必要</span></span><span class="chat-side"><span class="chat-time">14:45</span><span class="mute"><i data-lucide="bell-off"></i></span></span></button>
+        <button class="chat-item" data-name="6.19-21日万名学子体验行"><span class="avatar-wrap"><span class="avatar"><img src="img/mmexport1787144411359.jpg" alt="万名学子体验行头像"></span><span class="unread-dot"></span></span><span class="chat-main"><span class="chat-name">6.19-21日万名学子体验行...</span><span class="chat-preview">[16条] 人社局郑晓娟: [小程序] 宜才码</span></span><span class="chat-side"><span class="chat-time">12:00</span><span class="mute"><i data-lucide="bell-off"></i></span></span></button>
+        <button class="chat-item" data-name="ccfddl-ICONIP 2026交流群"><span class="avatar-wrap"><span class="avatar"><img src="img/mmexport1787144405785.jpg" alt="ICONIP交流群头像"></span></span><span class="chat-main"><span class="chat-name">ccfddl-ICONIP 2026交...</span><span class="chat-preview">"✌️ Aries°✌️"通过扫描"雪@津东新城康...</span></span><span class="chat-side"><span class="chat-time">周一</span><span class="mute"><i data-lucide="bell-off"></i></span></span></button>
+        <button class="chat-item" data-name="❤️❤️ My Home ❤️❤️"><span class="avatar-wrap"><span class="avatar"><img src="img/mmexport1787144397379.jpg" alt="My Home头像"></span></span><span class="chat-main"><span class="chat-name">❤️❤️ My Home ❤️❤️</span><span class="chat-preview">飘: [图片]</span></span><span class="chat-side"><span class="chat-time">周一</span></span></button>
+        <button class="chat-item" data-name="〰 Jensen"><span class="avatar-wrap"><span class="avatar"><img src="img/mmexport1787144389657.jpg" alt="Jensen头像"></span></span><span class="chat-main"><span class="chat-name">〰 Jensen</span><span class="chat-preview">[语音] 10''</span></span><span class="chat-side"><span class="chat-time">周四</span></span></button>
+        <button class="chat-item" data-name="ccfddl-SMC 2026交流群"><span class="avatar-wrap"><span class="avatar"><img src="img/mmexport1787144381595.jpg" alt="SMC交流群头像"></span><span class="unread-dot"></span></span><span class="chat-main"><span class="chat-name">ccfddl-SMC 2026交...</span><span class="chat-preview">[16条] 流星划过夜空: 是的</span></span><span class="chat-side"><span class="chat-time">7月23日</span><span class="mute"><i data-lucide="bell-off"></i></span></span></button>
+        <button class="chat-item" data-name="纺大四大才子"><span class="avatar-wrap"><span class="avatar"><img src="img/mmexport1787144375708.jpg" alt="纺大四大才子头像"></span></span><span class="chat-main"><span class="chat-name">纺大四大才子</span><span class="chat-preview">付春阳: 哈哈哈，可以</span></span><span class="chat-side"><span class="chat-time">7月13日</span></span></button>
+        <button class="chat-item" data-name="万名学子宜昌体验行"><span class="avatar-wrap"><span class="avatar"><img src="img/mmexport1787144417901.jpg" alt="万名学子宜昌体验行头像"></span></span><span class="chat-main"><span class="chat-name">万名学子宜昌体验行-纺...</span></span><span class="chat-side"><span class="chat-time">6月16日</span></span></button>
+        <button class="fold-row" id="foldButton"><span class="fold-icon"><i data-lucide="list"></i></span><span class="fold-text">折叠置顶聊天</span><span class="fold-arrow"><i data-lucide="chevron-up"></i></span></button>
+    </main>
+    <nav class="tabbar" aria-label="主导航"><button class="tab active" data-tab="微信"><span class="tab-icon"><i data-lucide="messages-square"></i><span class="tab-badge">...</span></span><span>微信</span></button><button class="tab" data-tab="通讯录"><span class="tab-icon"><i data-lucide="contact"></i></span><span>通讯录</span></button><button class="tab" data-tab="发现"><span class="tab-icon"><i data-lucide="compass"></i><span class="tab-badge dot"></span></span><span>发现</span></button><button class="tab" data-tab="我"><span class="tab-icon"><i data-lucide="user-round"></i></span><span>我</span></button></nav>
+</div>
+<script>
+    (function () {
+        var chatItems = document.querySelectorAll('.chat-item');
+        var tabs = document.querySelectorAll('.tab');
+        var unreadTotal = Array.prototype.reduce.call(chatItems, function (total, item) { return total + Number(item.getAttribute('data-unread') || 0); }, 0);
+        lucide.createIcons();
+        document.getElementById('pageTitle').textContent = '微信(' + unreadTotal + ')';
+        document.getElementById('searchButton').addEventListener('click', function () { window.location.href = 'search.html'; });
+        document.getElementById('scanButton').addEventListener('click', function () { window.location.href = 'scan.html?name=' + encodeURIComponent('林小北'); });
+        chatItems.forEach(function (item) { item.addEventListener('click', function () { window.alert('进入聊天：' + item.getAttribute('data-name')); }); });
+        document.getElementById('foldButton').addEventListener('click', function () { window.alert('置顶聊天已折叠'); });
+        tabs.forEach(function (tab) { tab.addEventListener('click', function () { if (tab.getAttribute('data-tab') !== '微信') { window.alert(tab.getAttribute('data-tab') + '页面待开发'); return; } tabs.forEach(function (item) { item.classList.toggle('active', item === tab); }); }); });
+        if ('serviceWorker' in navigator) window.addEventListener('load', function () { navigator.serviceWorker.register('service-worker.js'); });
+    }());
+</script>
+</body>
+</html>
