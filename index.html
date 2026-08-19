@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#ededed">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="微聊">
+    <title>微信</title>
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="icon" href="icons/app-icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="icons/app-icon-180.png">
+    <script src="js/lucide.min.js"></script>
+    <style>
+        :root { --page-bg:#f5f5f5; --surface:#fff; --line:#ebebeb; --text:#191919; --muted:#8a8a8a; --green:#07c160; --topbar-height:calc(56px + env(safe-area-inset-top)); --tabbar-height:64px; }
+        * { box-sizing:border-box; }
+        body { margin:0; background:#d8d8d8; color:var(--text); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",sans-serif; }
+        button,input { font:inherit; }
+        button { border:0; background:transparent; color:inherit; cursor:pointer; }
+        #app { width:100%; min-height:100dvh; max-width:520px; margin:0 auto; background:var(--page-bg); position:relative; overflow:hidden; }
+        .topbar { height:var(--topbar-height); padding:env(safe-area-inset-top) 14px 0 18px; display:flex; align-items:center; justify-content:space-between; background:var(--surface); border-bottom:1px solid var(--line); }
+        .topbar h1 { margin:0; font-size:18px; font-weight:600; line-height:56px; }
+        .top-actions { display:flex; height:56px; align-items:center; gap:10px; }
+        .icon-button { width:34px; height:34px; display:inline-flex; align-items:center; justify-content:center; border-radius:4px; }
+        .icon-button:active,.add-menu button:active,.list-item:active,.tool-row:active { background:#eee; }
+        .icon-button svg { width:22px; height:22px; stroke-width:2; }
+        .content { height:calc(100dvh - var(--topbar-height) - var(--tabbar-height)); overflow-y:auto; padding-bottom:12px; }
+        .page { display:none; }
+        .page.active { display:block; }
+        .list { background:var(--surface); }
+        .list-item { min-height:70px; margin-left:16px; padding:10px 16px 10px 0; display:flex; align-items:center; gap:12px; border-bottom:1px solid var(--line); }
+        .list-item:last-child { border-bottom:0; }
+        .avatar { width:48px; height:48px; flex:0 0 48px; display:grid; place-items:center; border-radius:5px; color:#fff; font-size:18px; font-weight:500; }
+        .avatar svg { width:23px; }
+        .avatar.teal { background:#3ca89d; }.avatar.orange { background:#e49855; }.avatar.blue { background:#5b94ce; }.avatar.purple { background:#8f78bc; }.avatar.red { background:#d3756f; }.avatar.me { background:#5689ca; font-size:25px; }
+        .row-main { min-width:0; flex:1; }.row-title { margin:0 0 4px; font-size:16px; font-weight:400; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }.row-subtitle { margin:0; color:#929292; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }.row-meta { align-self:flex-start; padding-top:3px; color:#aaa; font-size:11px; white-space:nowrap; }
+        .contact-tools { margin-bottom:8px; background:var(--surface); }
+        .tool-row { height:58px; margin-left:16px; padding-right:16px; display:flex; align-items:center; gap:14px; border-bottom:1px solid var(--line); }
+        .tool-row:last-child { border-bottom:0; }.tool-icon { width:34px; height:34px; display:grid; place-items:center; border-radius:5px; color:#fff; }.tool-icon.green { background:#07c160; }.tool-icon.blue { background:#4f91dc; }.tool-icon.yellow { background:#f8c441; }.tool-icon.red { background:#dd786d; }.tool-icon svg { width:20px; height:20px; }.tool-text { flex:1; font-size:16px; }.letter { height:28px; padding:8px 16px 0; color:#909090; font-size:12px; }
+        .discover-group { margin-bottom:8px; background:var(--surface); }.discover-row { min-height:58px; }.discover-arrow { color:#b5b5b5; }
+        .profile { margin-bottom:8px; padding:18px 16px; display:flex; align-items:center; gap:14px; background:var(--surface); }.profile-info { flex:1; min-width:0; }.profile-name { margin:0 0 8px; font-size:21px; font-weight:500; }.profile-id { margin:0; color:var(--muted); font-size:13px; }.profile-arrow { color:#b5b5b5; }
+        .tabbar { height:calc(var(--tabbar-height) + env(safe-area-inset-bottom)); padding-bottom:env(safe-area-inset-bottom); position:absolute; z-index:5; bottom:0; left:0; right:0; display:grid; grid-template-columns:repeat(4,1fr); background:#fafafa; border-top:1px solid var(--line); }
+        .tab { height:var(--tabbar-height); padding-top:8px; display:flex; flex-direction:column; align-items:center; gap:3px; color:#626262; font-size:11px; }.tab svg { width:23px; height:23px; stroke-width:1.9; }.tab.active { color:var(--green); }.badge-wrap { position:relative; height:23px; }.badge { position:absolute; top:-5px; right:-9px; min-width:16px; height:16px; padding:0 4px; display:grid; place-items:center; border:1px solid #fafafa; border-radius:9px; background:#fa5151; color:#fff; font-size:10px; line-height:1; }
+        .search-panel { position:absolute; z-index:10; top:0; left:0; right:0; padding:max(12px,env(safe-area-inset-top)) 12px 10px; display:none; align-items:center; gap:10px; background:#f5f5f5; }.search-panel.open { display:flex; }.search-box { height:36px; flex:1; padding:0 10px; display:flex; align-items:center; gap:7px; background:#fff; border-radius:4px; }.search-box svg { width:18px; color:#999; }.search-box input { width:100%; border:0; outline:0; font-size:15px; background:transparent; }.cancel-search { height:36px; padding:0 2px; color:#576b95; font-size:15px; }
+        .add-menu { position:absolute; z-index:8; top:49px; right:10px; width:148px; display:none; padding:5px 0; background:#4b4b4b; border-radius:5px; box-shadow:0 5px 14px rgba(0,0,0,.18); }.add-menu.open { display:block; }.add-menu::before { content:""; position:absolute; top:-7px; right:14px; border-width:0 7px 7px; border-style:solid; border-color:transparent transparent #4b4b4b; }.add-menu button { width:100%; height:45px; padding:0 16px; display:flex; align-items:center; gap:12px; color:#fff; text-align:left; font-size:15px; }.add-menu button svg { width:18px; }
+        @media (min-width:521px) { body { padding:20px 0; } #app { min-height:calc(100dvh - 40px); height:calc(100dvh - 40px); border-radius:8px; box-shadow:0 10px 30px rgba(0,0,0,.16); } .content { height:calc(100% - var(--topbar-height) - var(--tabbar-height)); } }
+    </style>
+</head>
+<body>
+<div id="app">
+    <header class="topbar"><h1 id="pageTitle">微信</h1><div class="top-actions"><button class="icon-button" id="searchButton" aria-label="搜索" title="搜索"><i data-lucide="search"></i></button><button class="icon-button" id="addButton" aria-label="更多操作" title="更多操作"><i data-lucide="plus"></i></button></div></header>
+    <div class="search-panel" id="searchPanel"><label class="search-box"><i data-lucide="search"></i><input id="searchInput" type="search" placeholder="搜索" autocomplete="off"></label><button class="cancel-search" id="cancelSearch">取消</button></div>
+    <div class="add-menu" id="addMenu"><button><i data-lucide="message-circle-plus"></i>发起群聊</button><button><i data-lucide="user-plus"></i>添加朋友</button><button data-action="scan"><i data-lucide="scan-line"></i>扫一扫</button><button><i data-lucide="credit-card"></i>收付款</button></div>
+    <main class="content">
+        <section class="page active" data-page="chats"><div class="list searchable-list">
+            <div class="list-item" data-search="微信支付 服务通知"><div class="avatar teal"><i data-lucide="wallet-cards"></i></div><div class="row-main"><p class="row-title">微信支付</p><p class="row-subtitle">交易提醒</p></div><span class="row-meta">10:28</span></div>
+            <div class="list-item" data-search="林小北 晚上一起吃饭吗"><div class="avatar orange">林</div><div class="row-main"><p class="row-title">林小北</p><p class="row-subtitle">晚上一起吃饭吗？</p></div><span class="row-meta">09:42</span></div>
+            <div class="list-item" data-search="产品讨论组 今天下午三点开会"><div class="avatar blue"><i data-lucide="users-round"></i></div><div class="row-main"><p class="row-title">产品讨论组</p><p class="row-subtitle">陈晨：今天下午三点开会</p></div><span class="row-meta">昨天</span></div>
+            <div class="list-item" data-search="王老师 收到谢谢"><div class="avatar purple">王</div><div class="row-main"><p class="row-title">王老师</p><p class="row-subtitle">收到，谢谢。</p></div><span class="row-meta">昨天</span></div>
+            <div class="list-item" data-search="文件传输助手 电脑登录确认"><div class="avatar teal"><i data-lucide="folder-sync"></i></div><div class="row-main"><p class="row-title">文件传输助手</p><p class="row-subtitle">电脑登录确认</p></div><span class="row-meta">星期一</span></div>
+        </div></section>
+        <section class="page" data-page="contacts"><div class="contact-tools"><div class="tool-row"><span class="tool-icon green"><i data-lucide="user-plus"></i></span><span class="tool-text">新的朋友</span></div><div class="tool-row"><span class="tool-icon blue"><i data-lucide="contact-round"></i></span><span class="tool-text">仅聊天的朋友</span></div><div class="tool-row"><span class="tool-icon blue"><i data-lucide="message-square-more"></i></span><span class="tool-text">群聊</span></div><div class="tool-row"><span class="tool-icon yellow"><i data-lucide="tag"></i></span><span class="tool-text">标签</span></div></div><div class="letter">L</div><div class="list searchable-list"><div class="list-item" data-search="林小北"><div class="avatar orange">林</div><div class="row-main"><p class="row-title">林小北</p></div></div><div class="list-item" data-search="李然"><div class="avatar red">李</div><div class="row-main"><p class="row-title">李然</p></div></div></div><div class="letter">W</div><div class="list searchable-list"><div class="list-item" data-search="王老师"><div class="avatar purple">王</div><div class="row-main"><p class="row-title">王老师</p></div></div><div class="list-item" data-search="吴小雨"><div class="avatar teal">吴</div><div class="row-main"><p class="row-title">吴小雨</p></div></div></div></section>
+        <section class="page" data-page="discover"><div class="discover-group"><div class="tool-row discover-row"><span class="tool-icon blue"><i data-lucide="radio"></i></span><span class="tool-text">朋友圈</span><i class="discover-arrow" data-lucide="chevron-right"></i></div></div><div class="discover-group"><div class="tool-row discover-row" data-action="scan"><span class="tool-icon yellow"><i data-lucide="scan-line"></i></span><span class="tool-text">扫一扫</span><i class="discover-arrow" data-lucide="chevron-right"></i></div><div class="tool-row discover-row"><span class="tool-icon blue"><i data-lucide="map-pin"></i></span><span class="tool-text">附近</span><i class="discover-arrow" data-lucide="chevron-right"></i></div></div><div class="discover-group"><div class="tool-row discover-row"><span class="tool-icon green"><i data-lucide="gamepad-2"></i></span><span class="tool-text">游戏</span><i class="discover-arrow" data-lucide="chevron-right"></i></div><div class="tool-row discover-row"><span class="tool-icon red"><i data-lucide="book-open"></i></span><span class="tool-text">小程序</span><i class="discover-arrow" data-lucide="chevron-right"></i></div></div></section>
+        <section class="page" data-page="me"><div class="profile"><div class="avatar me">我</div><div class="profile-info"><p class="profile-name">小明</p><p class="profile-id">微信号：xiaoming</p></div><i class="profile-arrow" data-lucide="chevron-right"></i></div><div class="discover-group"><div class="tool-row discover-row"><span class="tool-icon green"><i data-lucide="wallet-cards"></i></span><span class="tool-text">服务</span><i class="discover-arrow" data-lucide="chevron-right"></i></div></div><div class="discover-group"><div class="tool-row discover-row"><span class="tool-icon blue"><i data-lucide="heart"></i></span><span class="tool-text">收藏</span><i class="discover-arrow" data-lucide="chevron-right"></i></div><div class="tool-row discover-row"><span class="tool-icon blue"><i data-lucide="image"></i></span><span class="tool-text">朋友圈</span><i class="discover-arrow" data-lucide="chevron-right"></i></div><div class="tool-row discover-row"><span class="tool-icon yellow"><i data-lucide="smile"></i></span><span class="tool-text">表情</span><i class="discover-arrow" data-lucide="chevron-right"></i></div></div><div class="discover-group"><div class="tool-row discover-row"><span class="tool-icon green"><i data-lucide="settings"></i></span><span class="tool-text">设置</span><i class="discover-arrow" data-lucide="chevron-right"></i></div></div></section>
+    </main>
+    <nav class="tabbar" aria-label="主导航"><button class="tab active" data-target="chats"><span class="badge-wrap"><i data-lucide="message-circle"></i><span class="badge">2</span></span><span>微信</span></button><button class="tab" data-target="contacts"><i data-lucide="contacts"></i><span>通讯录</span></button><button class="tab" data-target="discover"><i data-lucide="compass"></i><span>发现</span></button><button class="tab" data-target="me"><i data-lucide="user-round"></i><span>我</span></button></nav>
+</div>
+<script>
+    (function () {
+        var pageTitle=document.getElementById('pageTitle'), pages=document.querySelectorAll('.page'), tabs=document.querySelectorAll('.tab'), titles={chats:'微信',contacts:'通讯录',discover:'发现',me:'我'}, searchPanel=document.getElementById('searchPanel'), searchInput=document.getElementById('searchInput'), searchButton=document.getElementById('searchButton'), cancelSearch=document.getElementById('cancelSearch'), addButton=document.getElementById('addButton'), addMenu=document.getElementById('addMenu');
+        lucide.createIcons();
+        tabs.forEach(function(tab){tab.addEventListener('click',function(){var target=tab.getAttribute('data-target');tabs.forEach(function(item){item.classList.toggle('active',item===tab);});pages.forEach(function(page){page.classList.toggle('active',page.getAttribute('data-page')===target);});pageTitle.textContent=titles[target];closeSearch();addMenu.classList.remove('open');});});
+        document.querySelectorAll('[data-action="scan"]').forEach(function(item){item.addEventListener('click',function(){window.location.href='scan.html?name='+encodeURIComponent('林小北');});});
+        function filterItems(keyword){var activePage=document.querySelector('.page.active');activePage.querySelectorAll('.searchable-list .list-item').forEach(function(item){item.style.display=item.getAttribute('data-search').toLowerCase().indexOf(keyword.toLowerCase())>-1?'':'none';});}
+        function closeSearch(){searchPanel.classList.remove('open');searchInput.value='';filterItems('');}
+        searchButton.addEventListener('click',function(){addMenu.classList.remove('open');searchPanel.classList.add('open');searchInput.focus();});cancelSearch.addEventListener('click',closeSearch);searchInput.addEventListener('input',function(){filterItems(searchInput.value.trim());});addButton.addEventListener('click',function(){addMenu.classList.toggle('open');});document.addEventListener('click',function(event){if(!addMenu.contains(event.target)&&!addButton.contains(event.target))addMenu.classList.remove('open');});
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function () {
+                navigator.serviceWorker.register('service-worker.js');
+            });
+        }
+    }());
+</script>
+</body>
+</html>
