@@ -1,7 +1,10 @@
-const CACHE_NAME = 'wechat-pwa-v1';
+const CACHE_NAME = 'wechat-pwa-v4';
 const APP_FILES = [
     './',
     './index.html',
+    './scan.html',
+    './transfer.html',
+    './success.html',
     './manifest.webmanifest',
     './js/lucide.min.js',
     './icons/app-icon.svg',

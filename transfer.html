@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#ededed">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="转账">
+    <title>转账</title>
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="icon" href="icons/app-icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="icons/app-icon-180.png">
+    <script src="js/lucide.min.js"></script>
+    <style>
+        :root { --bg:#ededed; --surface:#fff; --text:#191919; --muted:#8a8a8a; --line:#e8e8e8; --green:#07c160; --topbar-height:calc(56px + env(safe-area-inset-top)); }
+        * { box-sizing:border-box; }
+        body { margin:0; min-height:100dvh; background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",sans-serif; }
+        button,input { font:inherit; }
+        button { border:0; cursor:pointer; }
+        .transfer-app { min-height:100dvh; max-width:520px; margin:0 auto; display:flex; flex-direction:column; background:var(--bg); }
+        .topbar { height:var(--topbar-height); padding:env(safe-area-inset-top) 14px 0; display:flex; align-items:center; justify-content:center; position:relative; background:var(--surface); border-bottom:1px solid var(--line); }
+        .topbar h1 { margin:0; font-size:18px; font-weight:600; line-height:56px; }
+        .back-button { width:38px; height:38px; position:absolute; left:10px; bottom:9px; display:grid; place-items:center; background:transparent; color:var(--text); border-radius:4px; }
+        .back-button:active { background:#eee; }
+        .back-button svg { width:23px; height:23px; }
+        .content { flex:1; padding:24px 16px max(24px,env(safe-area-inset-bottom)); display:flex; flex-direction:column; }
+        .recipient { padding:22px 16px 24px; display:flex; flex-direction:column; align-items:center; background:var(--surface); border-bottom:1px solid var(--line); }
+        .avatar { width:64px; height:64px; display:grid; place-items:center; background:#5689ca; color:#fff; border-radius:6px; font-size:28px; font-weight:500; }
+        .nickname { margin:12px 0 0; font-size:17px; font-weight:500; }
+        .amount-panel { padding:24px 20px 20px; background:var(--surface); }
+        .amount-label { margin:0 0 14px; font-size:14px; }
+        .amount-row { min-height:64px; display:flex; align-items:center; border-bottom:1px solid var(--line); }
+        .currency { margin-right:8px; font-size:34px; line-height:1; font-weight:500; }
+        .amount-input { width:100%; min-width:0; border:0; outline:0; background:transparent; color:var(--text); font-size:42px; font-weight:500; line-height:1.2; }
+        .amount-input::placeholder { color:#d2d2d2; }
+        .transfer-note { margin:14px 0 0; color:var(--muted); font-size:13px; line-height:1.55; }
+        .confirm-button { width:100%; height:48px; margin-top:22px; display:none; align-items:center; justify-content:center; background:var(--green); color:#fff; border-radius:4px; font-size:16px; font-weight:500; }
+        .confirm-button.show { display:flex; }
+        .confirm-button:active { background:#06ad56; }
+        .footer-note { margin:auto 0 0; padding-top:28px; color:#a0a0a0; text-align:center; font-size:12px; line-height:1.6; }
+        .toast { position:fixed; left:50%; bottom:90px; transform:translate(-50%,12px); max-width:calc(100% - 40px); padding:10px 15px; opacity:0; pointer-events:none; background:rgba(0,0,0,.72); color:#fff; border-radius:4px; font-size:13px; white-space:nowrap; transition:opacity .2s,transform .2s; }
+        .toast.show { opacity:1; transform:translate(-50%,0); }
+        @media (min-width:521px) { body { padding:20px 0; } .transfer-app { min-height:calc(100dvh - 40px); height:calc(100dvh - 40px); border-radius:8px; overflow:hidden; box-shadow:0 10px 30px rgba(0,0,0,.16); } }
+    </style>
+</head>
+<body>
+<div class="transfer-app">
+    <header class="topbar">
+        <button class="back-button" id="backButton" aria-label="返回"><i data-lucide="arrow-left"></i></button>
+        <h1 id="pageTitle">转账给 XXX</h1>
+    </header>
+    <main class="content">
+        <section class="recipient" aria-label="收款人信息">
+            <div class="avatar" id="recipientAvatar">X</div>
+            <p class="nickname" id="recipientName">XXX</p>
+        </section>
+        <section class="amount-panel">
+            <p class="amount-label">转账金额</p>
+            <label class="amount-row">
+                <span class="currency">¥</span>
+                <input class="amount-input" id="amountInput" type="text" inputmode="decimal" autocomplete="off" placeholder="0.00" aria-label="转账金额">
+            </label>
+            <p class="transfer-note">转账说明：请确认收款人和转账金额。本页面仅用于界面演示，不会产生真实交易。</p>
+            <button class="confirm-button" id="confirmButton">确认转账</button>
+        </section>
+        <p class="footer-note">转账说明<br>转账前请仔细核对对方身份，谨防诈骗</p>
+    </main>
+</div>
+<div class="toast" id="toast" role="status"></div>
+<script>
+    (function () {
+        lucide.createIcons();
+        var amountInput = document.getElementById('amountInput');
+        var confirmButton = document.getElementById('confirmButton');
+        var toast = document.getElementById('toast');
+        var timer;
+        var params = new URLSearchParams(window.location.search);
+        var recipient = (params.get('name') || 'XXX').slice(0, 20);
+
+        document.title = '转账给 ' + recipient;
+        document.getElementById('pageTitle').textContent = '转账给 ' + recipient;
+        document.getElementById('recipientName').textContent = recipient;
+        document.getElementById('recipientAvatar').textContent = recipient.charAt(0).toUpperCase();
+
+        function updateConfirmButton() {
+            var amount = Number(amountInput.value);
+            confirmButton.classList.toggle('show', Number.isFinite(amount) && amount > 0);
+        }
+
+        function showToast(message) {
+            toast.textContent = message;
+            toast.classList.add('show');
+            clearTimeout(timer);
+            timer = setTimeout(function () { toast.classList.remove('show'); }, 1800);
+        }
+
+        amountInput.addEventListener('input', function () {
+            var value = amountInput.value.replace(/[^\d.]/g, '');
+            var parts = value.split('.');
+            if (parts.length > 2) value = parts.shift() + '.' + parts.join('');
+            parts = value.split('.');
+            if (parts[1] && parts[1].length > 2) value = parts[0] + '.' + parts[1].slice(0, 2);
+            if (parts[0] && parts[0].length > 8) value = parts[0].slice(0, 8) + (parts.length > 1 ? '.' + (parts[1] || '') : '');
+            amountInput.value = value;
+            updateConfirmButton();
+        });
+
+        document.getElementById('backButton').addEventListener('click', function () {
+            if (history.length > 1) history.back();
+            else window.location.href = 'index.html';
+        });
+        confirmButton.addEventListener('click', function () {
+            window.location.href = 'success.html?name=' + encodeURIComponent(recipient) + '&amount=' + encodeURIComponent(amountInput.value);
+        });
+    }());
+</script>
+</body>
+</html>

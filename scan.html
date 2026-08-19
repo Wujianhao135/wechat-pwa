@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#ededed">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="扫一扫">
+    <title>扫一扫</title>
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="icon" href="icons/app-icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="icons/app-icon-180.png">
+    <script src="js/lucide.min.js"></script>
+    <style>
+        :root { --bg:#f5f5f5; --surface:#fff; --text:#191919; --muted:#8c8c8c; --line:#e8e8e8; --green:#07c160; --topbar-height:calc(56px + env(safe-area-inset-top)); }
+        * { box-sizing:border-box; }
+        body { margin:0; min-height:100dvh; background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",sans-serif; }
+        button { border:0; font:inherit; cursor:pointer; }
+        .scan-app { min-height:100dvh; max-width:520px; margin:0 auto; display:flex; flex-direction:column; background:var(--bg); }
+        .topbar { height:var(--topbar-height); padding:env(safe-area-inset-top) 14px 0; display:flex; align-items:center; justify-content:center; position:relative; background:var(--surface); border-bottom:1px solid var(--line); }
+        .topbar h1 { margin:0; font-size:18px; font-weight:600; line-height:56px; }
+        .back-button { width:38px; height:38px; position:absolute; left:10px; bottom:9px; display:grid; place-items:center; background:transparent; color:var(--text); border-radius:4px; }
+        .back-button:active { background:#eee; }
+        .back-button svg { width:23px; height:23px; }
+        .scan-main { flex:1; padding:44px 24px 28px; display:flex; flex-direction:column; align-items:center; }
+        .hint { margin:0 0 28px; color:var(--muted); font-size:14px; }
+        .viewfinder { width:min(78vw,320px); aspect-ratio:1; position:relative; overflow:hidden; background:#a9a9a9; box-shadow:0 0 0 1px rgba(0,0,0,.08); cursor:pointer; }
+        .viewfinder:focus-visible { outline:3px solid rgba(7,193,96,.4); outline-offset:4px; }
+        .viewfinder::before,.viewfinder::after { content:""; position:absolute; pointer-events:none; }
+        .viewfinder::before { inset:20px; background:linear-gradient(var(--green),var(--green)) left top/34px 4px no-repeat,linear-gradient(var(--green),var(--green)) left top/4px 34px no-repeat,linear-gradient(var(--green),var(--green)) right top/34px 4px no-repeat,linear-gradient(var(--green),var(--green)) right top/4px 34px no-repeat,linear-gradient(var(--green),var(--green)) left bottom/34px 4px no-repeat,linear-gradient(var(--green),var(--green)) left bottom/4px 34px no-repeat,linear-gradient(var(--green),var(--green)) right bottom/34px 4px no-repeat,linear-gradient(var(--green),var(--green)) right bottom/4px 34px no-repeat; }
+        .viewfinder::after { height:2px; top:20px; right:20px; left:20px; background:var(--green); box-shadow:0 0 8px rgba(7,193,96,.9); animation:scan-line 2.6s ease-in-out infinite; }
+        .camera-mark { position:absolute; inset:0; display:grid; place-items:center; color:rgba(255,255,255,.72); pointer-events:none; }
+        .camera-mark svg { width:48px; height:48px; stroke-width:1.2; }
+        .simulated { margin:20px 0 0; color:rgba(255,255,255,.88); font-size:13px; pointer-events:none; }
+        .bottom-actions { width:100%; margin-top:auto; display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+        .action-button { height:52px; display:flex; align-items:center; justify-content:center; gap:9px; background:var(--surface); color:var(--text); border:1px solid var(--line); border-radius:4px; font-size:15px; }
+        .action-button:active { background:#eee; }
+        .action-button.primary { background:var(--green); border-color:var(--green); color:#fff; }
+        .action-button svg { width:20px; height:20px; }
+        .toast { position:fixed; left:50%; bottom:96px; transform:translate(-50%,12px); padding:10px 15px; opacity:0; pointer-events:none; background:rgba(0,0,0,.72); color:#fff; border-radius:4px; font-size:13px; transition:opacity .2s,transform .2s; }
+        .toast.show { opacity:1; transform:translate(-50%,0); }
+        @keyframes scan-line { 0%,10% { top:20px; opacity:.5; } 50% { opacity:1; } 90%,100% { top:calc(100% - 22px); opacity:.5; } }
+        @media (min-width:521px) { body { padding:20px 0; } .scan-app { min-height:calc(100dvh - 40px); height:calc(100dvh - 40px); border-radius:8px; overflow:hidden; box-shadow:0 10px 30px rgba(0,0,0,.16); } }
+    </style>
+</head>
+<body>
+<div class="scan-app">
+    <header class="topbar"><button class="back-button" id="backButton" aria-label="返回"><i data-lucide="arrow-left"></i></button><h1>扫一扫</h1></header>
+    <main class="scan-main">
+        <p class="hint">点击取景框，模拟扫描二维码</p>
+        <div class="viewfinder" id="viewfinder" role="button" tabindex="0" aria-label="点击模拟扫码成功"><div class="camera-mark"><i data-lucide="scan"></i></div><span class="simulated">点击模拟扫码成功</span></div>
+        <div class="bottom-actions"><button class="action-button primary" id="myQrButton"><i data-lucide="qr-code"></i><span>我的二维码</span></button><button class="action-button" id="albumButton"><i data-lucide="image"></i><span>相册</span></button></div>
+    </main>
+</div>
+<div class="toast" id="toast" role="status"></div>
+<script>
+    (function () {
+        lucide.createIcons();
+        var params = new URLSearchParams(window.location.search);
+        var recipient = (params.get('name') || '林小北').slice(0, 20);
+        var viewfinder = document.getElementById('viewfinder');
+        var toast = document.getElementById('toast');
+        var timer;
+
+        function openTransferPage() {
+            window.location.href = 'transfer.html?name=' + encodeURIComponent(recipient);
+        }
+
+        function showToast(message) {
+            toast.textContent = message;
+            toast.classList.add('show');
+            clearTimeout(timer);
+            timer = setTimeout(function () { toast.classList.remove('show'); }, 1800);
+        }
+
+        viewfinder.addEventListener('click', openTransferPage);
+        viewfinder.addEventListener('keydown', function (event) {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                openTransferPage();
+            }
+        });
+        document.getElementById('backButton').addEventListener('click', function () { if (history.length > 1) history.back(); else window.location.href = 'index.html'; });
+        document.getElementById('myQrButton').addEventListener('click', function () { showToast('我的二维码功能即将上线'); });
+        document.getElementById('albumButton').addEventListener('click', function () { showToast('相册功能即将上线'); });
+    }());
+</script>
+</body>
+</html>
