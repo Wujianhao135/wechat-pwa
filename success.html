@@ -12,12 +12,13 @@
     <link rel="icon" href="icons/app-icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="icons/app-icon-180.png">
     <style>
-        :root { --green:#07c160; --text:#171717; --button:#f1f1f1; }
+        :root { --app-vh:100vh; --green:#07c160; --text:#171717; --button:#f1f1f1; }
+        @supports (height:100dvh) { :root { --app-vh:100dvh; } }
         * { box-sizing:border-box; }
         html,body { width:100%; height:100%; overflow:hidden; }
         body { margin:0; background:#fff; color:var(--text); font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Microsoft YaHei",sans-serif; -webkit-font-smoothing:antialiased; }
         button { border:0; cursor:pointer; font:inherit; }
-        .success-app { width:100%; max-width:520px; height:100dvh; min-height:100dvh; margin:0 auto; padding:calc(26px + env(safe-area-inset-top)) 24px calc(34px + env(safe-area-inset-bottom)); display:flex; flex-direction:column; background:#fff; }
+        .success-app { width:100%; max-width:520px; height:var(--app-vh); min-height:var(--app-vh); max-height:var(--app-vh); margin:0 auto; padding:calc(26px + env(safe-area-inset-top)) 24px calc(34px + env(safe-area-inset-bottom)); display:flex; flex-direction:column; background:#fff; }
         .success-heading { display:flex; align-items:center; justify-content:center; gap:14px; color:var(--green); }
         .success-heading h1 { margin:0; font-size:25px; font-weight:600; line-height:38px; }
         .success-logo { width:47px; height:42px; position:relative; display:block; background:var(--green); border-radius:50%; }
