@@ -184,6 +184,18 @@
 </div>
 <script>
     (function () {
+        // 使用真实可视高度修正安装模式下系统栏造成的 vh 偏差。
+        function updateAppViewportHeight() {
+            var viewportHeight = window.visualViewport && window.visualViewport.height
+                ? window.visualViewport.height
+                : window.innerHeight;
+            if (viewportHeight) document.documentElement.style.setProperty('--app-vh', Math.round(viewportHeight) + 'px');
+        }
+        updateAppViewportHeight();
+        window.addEventListener('resize', updateAppViewportHeight, { passive:true });
+        window.addEventListener('orientationchange', function () { window.requestAnimationFrame(updateAppViewportHeight); });
+        if (window.visualViewport) window.visualViewport.addEventListener('resize', updateAppViewportHeight, { passive:true });
+
         lucide.createIcons();
         var amountInput = document.getElementById('amountInput');
         var amountEditor = document.getElementById('amountEditor');
